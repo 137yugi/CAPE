@@ -1,0 +1,12 @@
+.DS_Store
+node_modules/
+logs/
+test-results/
+playwright-report/
+output/
+.tmp_*/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+

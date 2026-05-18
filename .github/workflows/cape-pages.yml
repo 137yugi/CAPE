@@ -1,0 +1,49 @@
+name: Deploy CAPE Live
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare static artifact
+        run: |
+          mkdir -p public/demo-data/official_assets
+          cp cape-live.html public/index.html
+          cp cape-live.html cape-live.css cape-live.js public/
+          cp -R cape-assets cape-motion cape-vendor public/
+          cp -R demo-data/official_assets/assets14 public/demo-data/official_assets/
+          cp -R demo-data/official_assets/assets23 public/demo-data/official_assets/
+          touch public/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

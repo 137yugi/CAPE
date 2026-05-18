@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>CAPE Live</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="cape-live.css" />
+    <script src="cape-vendor/jszip.min.js"></script>
+  </head>
+  <body>
+    <main class="cape-live" id="appShell">
+      <section class="performer-stage" id="stage">
+        <video id="base-video" playsinline webkit-playsinline muted></video>
+        <canvas id="mouth-canvas"></canvas>
+      </section>
+
+      <div class="ambient ambient-one"></div>
+      <div class="ambient ambient-two"></div>
+
+      <header class="top-glass app-ui">
+        <img src="cape-assets/cape-wordmark.png" alt="CAPE" class="wordmark" />
+        <div class="live-chip" id="liveStatus">No pack</div>
+      </header>
+
+      <section class="empty-state app-ui" id="emptyState">
+        <img src="cape-assets/cape-mark.png" alt="" class="empty-mark" />
+        <h1>CAPE Live</h1>
+        <p>Scene ZIPを追加して、下のボタンから表情やシーンを切り替えます。</p>
+        <div class="empty-actions">
+          <button type="button" id="emptyImportBtn">ZIPを読み込む</button>
+          <button type="button" id="demoBtn" class="ghost">Demoを開く</button>
+        </div>
+      </section>
+
+      <footer class="live-dock app-ui" id="liveDock">
+        <div class="scene-strip" id="sceneStrip"></div>
+        <div class="control-row">
+          <button type="button" class="control-button mic" id="micToggleBtn">
+            <span class="button-main">Mic</span>
+            <span class="button-sub" id="micStateText">OFF</span>
+          </button>
+          <button type="button" class="control-button" id="packBtn">
+            <span class="button-main">Pack</span>
+            <span class="button-sub" id="sceneCountText">0 scenes</span>
+          </button>
+          <button type="button" class="control-button" id="menuBtn">
+            <span class="button-main">Menu</span>
+            <span class="button-sub">Settings</span>
+          </button>
+        </div>
+      </footer>
+
+      <aside class="sheet app-ui" id="settingsSheet" aria-hidden="true">
+        <div class="sheet-grip"></div>
+        <div class="sheet-head">
+          <div>
+            <p>Live Settings</p>
+            <h2>CAPE</h2>
+          </div>
+          <button type="button" class="icon-button" id="closeSheetBtn">×</button>
+        </div>
+
+        <div class="settings-grid">
+          <label class="field">
+            <span>現在のシーン名</span>
+            <input id="sceneNameInput" type="text" placeholder="Scene name" />
+          </label>
+          <button type="button" id="renameSceneBtn">名前を保存</button>
+
+          <label class="field">
+            <span>操作UIの透明度</span>
+            <input id="uiOpacitySlider" type="range" min="18" max="100" value="86" />
+            <strong id="uiOpacityValue">86%</strong>
+          </label>
+
+          <label class="field">
+            <span>口パク感度</span>
+            <input id="sensitivitySlider" type="range" min="0" max="100" value="58" />
+            <strong id="sensitivityValue">58</strong>
+          </label>
+        </div>
+
+        <div class="sheet-actions">
+          <button type="button" id="sheetImportBtn">Scene ZIPを追加</button>
+          <button type="button" id="sheetDemoBtn" class="ghost">Demoを追加</button>
+          <a class="output-link" id="outputLink" href="cape-live.html?output=1" target="_blank" rel="noopener">Outputを開く</a>
+        </div>
+
+        <div class="status-panel" id="statusPanel">MotionPNGTuber互換Scene ZIPを読み込めます。</div>
+      </aside>
+
+      <input id="zipInput" type="file" accept=".zip,application/zip" multiple hidden />
+    </main>
+
+    <script src="cape-motion/audio-capture.js"></script>
+    <script src="cape-motion/lipsync.js"></script>
+    <script src="cape-live.js"></script>
+  </body>
+</html>
