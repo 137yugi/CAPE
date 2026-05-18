@@ -63,6 +63,14 @@ class LipsyncEngine {
         this.noiseFloor = 0.002;
         this.levelPeak = 0.02;
         this.mouthChangeMinMs = hqAudioEnabled ? 45 : 70;
+        this.mouthRenderAdjust = {
+            opacity: 1,
+            brightness: 1,
+            saturation: 1,
+            offsetX: 0,
+            offsetY: 0,
+            scale: 1
+        };
 
         // 口状態
         this.mouthState = 'closed';
@@ -102,6 +110,14 @@ class LipsyncEngine {
         this.mouthChangeMinMs = enabled ? 45 : 70;
         this.resetAudioStats();
         this.log(enabled ? 'HQ Audio: ON' : 'HQ Audio: OFF');
+    }
+
+    setMouthRenderAdjust(adjust = {}) {
+        this.mouthRenderAdjust = {
+            ...this.mouthRenderAdjust,
+            ...adjust
+        };
+        this.handleResize();
     }
 
     log(msg) {
@@ -667,8 +683,9 @@ class LipsyncEngine {
     applyCalibrationToQuad(quad, data) {
         const calib = data.calibration || { offset: [0, 0], scale: 1, rotation: 0 };
         const applyCalib = data.calibrationApplied === true;
+        let adjustedQuad = quad.map((pt) => [pt[0], pt[1]]);
         if (!applyCalib) {
-            return quad.map((pt) => [pt[0], pt[1]]);
+            return this.applyRuntimeMouthAdjust(adjustedQuad);
         }
 
         const offsetX = calib.offset[0] || 0;
@@ -688,13 +705,37 @@ class LipsyncEngine {
         const cos = Math.cos(rotation);
         const sin = Math.sin(rotation);
 
-        return quad.map(([x, y]) => {
+        adjustedQuad = quad.map(([x, y]) => {
             const dx = (x - cx) * scale;
             const dy = (y - cy) * scale;
             const rx = dx * cos - dy * sin + cx + offsetX;
             const ry = dx * sin + dy * cos + cy + offsetY;
             return [rx, ry];
         });
+
+        return this.applyRuntimeMouthAdjust(adjustedQuad);
+    }
+
+    applyRuntimeMouthAdjust(quad) {
+        const adjust = this.mouthRenderAdjust || {};
+        const scale = Number.isFinite(adjust.scale) ? adjust.scale : 1;
+        const offsetX = Number.isFinite(adjust.offsetX) ? adjust.offsetX : 0;
+        const offsetY = Number.isFinite(adjust.offsetY) ? adjust.offsetY : 0;
+        if (scale === 1 && offsetX === 0 && offsetY === 0) return quad;
+
+        let cx = 0;
+        let cy = 0;
+        for (const [x, y] of quad) {
+            cx += x;
+            cy += y;
+        }
+        cx /= 4;
+        cy /= 4;
+
+        return quad.map(([x, y]) => [
+            cx + (x - cx) * scale + offsetX,
+            cy + (y - cy) * scale + offsetY
+        ]);
     }
 
     drawWarpedSprite(sprite, quad) {
@@ -735,7 +776,14 @@ class LipsyncEngine {
             return;
         }
         ctx.setTransform(mat.a, mat.b, mat.c, mat.d, mat.e, mat.f);
+        const adjust = this.mouthRenderAdjust || {};
+        ctx.globalAlpha = Math.max(0, Math.min(1, Number(adjust.opacity) || 0));
+        const brightness = Math.max(0.2, Math.min(2, Number(adjust.brightness) || 1));
+        const saturation = Math.max(0, Math.min(2, Number(adjust.saturation) || 1));
+        ctx.filter = `brightness(${brightness}) saturate(${saturation})`;
         ctx.drawImage(image, 0, 0);
+        ctx.filter = 'none';
+        ctx.globalAlpha = 1;
         ctx.restore();
     }
 

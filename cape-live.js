@@ -25,9 +25,24 @@ const el = {
   uiOpacitySlider: $('uiOpacitySlider'),
   uiOpacityValue: $('uiOpacityValue'),
   resetUiOpacityBtn: $('resetUiOpacityBtn'),
+  stageFitSelect: $('stageFitSelect'),
+  backgroundSelect: $('backgroundSelect'),
   sensitivitySlider: $('sensitivitySlider'),
   sensitivityValue: $('sensitivityValue'),
   audioQualitySelect: $('audioQualitySelect'),
+  mouthOpacitySlider: $('mouthOpacitySlider'),
+  mouthOpacityValue: $('mouthOpacityValue'),
+  mouthBrightnessSlider: $('mouthBrightnessSlider'),
+  mouthBrightnessValue: $('mouthBrightnessValue'),
+  mouthSaturationSlider: $('mouthSaturationSlider'),
+  mouthSaturationValue: $('mouthSaturationValue'),
+  mouthOffsetXSlider: $('mouthOffsetXSlider'),
+  mouthOffsetXValue: $('mouthOffsetXValue'),
+  mouthOffsetYSlider: $('mouthOffsetYSlider'),
+  mouthOffsetYValue: $('mouthOffsetYValue'),
+  mouthScaleSlider: $('mouthScaleSlider'),
+  mouthScaleValue: $('mouthScaleValue'),
+  resetMouthBtn: $('resetMouthBtn'),
   sheetImportBtn: $('sheetImportBtn'),
   sheetDemoBtn: $('sheetDemoBtn'),
   statusPanel: $('statusPanel'),
@@ -42,7 +57,10 @@ const state = {
   outputMode: new URLSearchParams(location.search).get('output') === '1',
   uiOpacity: Number(localStorage.getItem('cape.uiOpacity') || 86),
   sensitivity: Number(localStorage.getItem('cape.sensitivity') || 58),
-  audioQuality: localStorage.getItem('cape.audioQuality') || 'hq'
+  audioQuality: localStorage.getItem('cape.audioQuality') || 'hq',
+  stageFit: localStorage.getItem('cape.stageFit') || 'contain',
+  background: localStorage.getItem('cape.background') || 'dark',
+  mouth: readStoredMouthAdjust()
 };
 
 const engine = new LipsyncEngine({
@@ -84,6 +102,9 @@ function boot() {
   applyUiOpacity(state.uiOpacity);
   applySensitivity(state.sensitivity);
   applyAudioQuality(state.audioQuality);
+  applyStageFit(state.stageFit);
+  applyBackground(state.background);
+  applyMouthAdjust(state.mouth);
   bindEvents();
   render();
 }
@@ -106,6 +127,12 @@ function bindEvents() {
     applyUiOpacity(Number(event.target.value));
   });
   el.resetUiOpacityBtn.addEventListener('click', () => applyUiOpacity(86));
+  el.stageFitSelect.addEventListener('change', (event) => {
+    applyStageFit(event.target.value);
+  });
+  el.backgroundSelect.addEventListener('change', (event) => {
+    applyBackground(event.target.value);
+  });
 
   el.sensitivitySlider.addEventListener('input', (event) => {
     applySensitivity(Number(event.target.value));
@@ -113,6 +140,20 @@ function bindEvents() {
   el.audioQualitySelect.addEventListener('change', (event) => {
     applyAudioQuality(event.target.value);
   });
+
+  [
+    el.mouthOpacitySlider,
+    el.mouthBrightnessSlider,
+    el.mouthSaturationSlider,
+    el.mouthOffsetXSlider,
+    el.mouthOffsetYSlider,
+    el.mouthScaleSlider
+  ].forEach((input) => {
+    input.addEventListener('input', () => {
+      applyMouthAdjust(readMouthInputs());
+    });
+  });
+  el.resetMouthBtn.addEventListener('click', () => applyMouthAdjust(defaultMouthAdjust()));
 }
 
 function openZipPicker() {
@@ -184,7 +225,7 @@ async function buildSceneFromZip(zip, zipName, root, projectManifest) {
   const rootManifest = await readJson(zip, `${root}manifest.json`);
   const manifest = rootManifest || (root ? null : projectManifest);
   const files = filesUnderRoot(zip, root);
-  const name = manifest?.name || manifest?.title || cleanZipName(zipName, root);
+  const name = pickSceneName({ manifest, zipName, root });
   const normalizedFiles = await normalizeSceneFiles(files, manifest, root);
   validateMotionScene(normalizedFiles, name);
 
@@ -428,6 +469,36 @@ function applyAudioQuality(value) {
   audioCapture.setHQAudioEnabled(hqEnabled);
 }
 
+function applyStageFit(value) {
+  state.stageFit = value === 'cover' ? 'cover' : 'contain';
+  localStorage.setItem('cape.stageFit', state.stageFit);
+  el.stageFitSelect.value = state.stageFit;
+  el.appShell.classList.toggle('fit-cover', state.stageFit === 'cover');
+}
+
+function applyBackground(value) {
+  state.background = ['green', 'white', 'checker'].includes(value) ? value : 'dark';
+  localStorage.setItem('cape.background', state.background);
+  el.backgroundSelect.value = state.background;
+  el.appShell.classList.toggle('bg-green', state.background === 'green');
+  el.appShell.classList.toggle('bg-white', state.background === 'white');
+  el.appShell.classList.toggle('bg-checker', state.background === 'checker');
+}
+
+function applyMouthAdjust(next) {
+  state.mouth = {
+    opacity: clampNumber(next.opacity, 0, 1, 1),
+    brightness: clampNumber(next.brightness, 0.6, 1.4, 1),
+    saturation: clampNumber(next.saturation, 0.5, 1.6, 1),
+    offsetX: clampNumber(next.offsetX, -80, 80, 0),
+    offsetY: clampNumber(next.offsetY, -80, 80, 0),
+    scale: clampNumber(next.scale, 0.7, 1.4, 1)
+  };
+  localStorage.setItem('cape.mouthAdjust', JSON.stringify(state.mouth));
+  syncMouthInputs(state.mouth);
+  engine.setMouthRenderAdjust(state.mouth);
+}
+
 function setStatus(message, status = '') {
   el.statusPanel.textContent = message;
   el.statusPanel.dataset.status = status;
@@ -464,9 +535,82 @@ function defineRelativePath(file, path) {
   }
 }
 
+function pickSceneName({ manifest, zipName, root }) {
+  const zipBase = cleanZipName(zipName, '');
+  if (!root) return zipBase || manifest?.name || manifest?.title || 'Scene';
+
+  const folderName = cleanZipName(zipName, root);
+  return manifest?.name || manifest?.title || folderName || zipBase || 'Scene';
+}
+
 function cleanZipName(zipName, root) {
-  const base = root ? root.replace(/^scenes\//, '').replace(/\/$/, '') : zipName.replace(/\.zip$/i, '');
+  const raw = root ? root.replace(/^scenes\//, '').replace(/\/$/, '') : zipName.replace(/\.zip$/i, '');
+  const base = decodeURIComponent(raw)
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   return base || 'Scene';
+}
+
+function defaultMouthAdjust() {
+  return {
+    opacity: 1,
+    brightness: 1,
+    saturation: 1,
+    offsetX: 0,
+    offsetY: 0,
+    scale: 1
+  };
+}
+
+function readStoredMouthAdjust() {
+  try {
+    return {
+      ...defaultMouthAdjust(),
+      ...JSON.parse(localStorage.getItem('cape.mouthAdjust') || '{}')
+    };
+  } catch {
+    return defaultMouthAdjust();
+  }
+}
+
+function readMouthInputs() {
+  return {
+    opacity: Number(el.mouthOpacitySlider.value) / 100,
+    brightness: Number(el.mouthBrightnessSlider.value) / 100,
+    saturation: Number(el.mouthSaturationSlider.value) / 100,
+    offsetX: Number(el.mouthOffsetXSlider.value),
+    offsetY: Number(el.mouthOffsetYSlider.value),
+    scale: Number(el.mouthScaleSlider.value) / 100
+  };
+}
+
+function syncMouthInputs(adjust) {
+  const opacity = Math.round(adjust.opacity * 100);
+  const brightness = Math.round(adjust.brightness * 100);
+  const saturation = Math.round(adjust.saturation * 100);
+  const offsetX = Math.round(adjust.offsetX);
+  const offsetY = Math.round(adjust.offsetY);
+  const scale = Math.round(adjust.scale * 100);
+
+  el.mouthOpacitySlider.value = String(opacity);
+  el.mouthOpacityValue.textContent = `${opacity}%`;
+  el.mouthBrightnessSlider.value = String(brightness);
+  el.mouthBrightnessValue.textContent = `${brightness}%`;
+  el.mouthSaturationSlider.value = String(saturation);
+  el.mouthSaturationValue.textContent = `${saturation}%`;
+  el.mouthOffsetXSlider.value = String(offsetX);
+  el.mouthOffsetXValue.textContent = `${offsetX}px`;
+  el.mouthOffsetYSlider.value = String(offsetY);
+  el.mouthOffsetYValue.textContent = `${offsetY}px`;
+  el.mouthScaleSlider.value = String(scale);
+  el.mouthScaleValue.textContent = `${scale}%`;
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(min, Math.min(max, number));
 }
 
 function guessMime(path) {

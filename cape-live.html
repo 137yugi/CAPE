@@ -79,6 +79,22 @@
               <strong id="uiOpacityValue">86%</strong>
             </label>
             <button type="button" id="resetUiOpacityBtn" class="ghost">操作UIを表示に戻す</button>
+            <label class="field">
+              <span>表示フィット</span>
+              <select id="stageFitSelect">
+                <option value="contain">全体を表示</option>
+                <option value="cover">画面いっぱい</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>背景</span>
+              <select id="backgroundSelect">
+                <option value="dark">Dark</option>
+                <option value="green">Chroma Green</option>
+                <option value="white">White</option>
+                <option value="checker">Checker</option>
+              </select>
+            </label>
           </section>
 
           <section class="settings-section">
@@ -95,6 +111,41 @@
                 <option value="standard">Standard</option>
               </select>
             </label>
+          </section>
+
+          <section class="settings-section">
+            <h3>Mouth</h3>
+            <label class="field">
+              <span>口PNG 不透明度</span>
+              <input id="mouthOpacitySlider" type="range" min="0" max="100" value="100" />
+              <strong id="mouthOpacityValue">100%</strong>
+            </label>
+            <label class="field">
+              <span>口PNG 明るさ</span>
+              <input id="mouthBrightnessSlider" type="range" min="60" max="140" value="100" />
+              <strong id="mouthBrightnessValue">100%</strong>
+            </label>
+            <label class="field">
+              <span>口PNG 彩度</span>
+              <input id="mouthSaturationSlider" type="range" min="50" max="160" value="100" />
+              <strong id="mouthSaturationValue">100%</strong>
+            </label>
+            <label class="field">
+              <span>口位置 X</span>
+              <input id="mouthOffsetXSlider" type="range" min="-80" max="80" value="0" />
+              <strong id="mouthOffsetXValue">0px</strong>
+            </label>
+            <label class="field">
+              <span>口位置 Y</span>
+              <input id="mouthOffsetYSlider" type="range" min="-80" max="80" value="0" />
+              <strong id="mouthOffsetYValue">0px</strong>
+            </label>
+            <label class="field">
+              <span>口サイズ</span>
+              <input id="mouthScaleSlider" type="range" min="70" max="140" value="100" />
+              <strong id="mouthScaleValue">100%</strong>
+            </label>
+            <button type="button" id="resetMouthBtn" class="ghost">口補正をリセット</button>
           </section>
         </div>
 
