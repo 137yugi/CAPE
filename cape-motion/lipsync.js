@@ -589,6 +589,10 @@ class LipsyncEngine {
 
             this.startRenderLoop();
         } catch (err) {
+            if (err && err.name === 'AbortError') {
+                this.startRenderLoop();
+                return;
+            }
             this.log('再生エラー: ' + err.message);
             console.error('動画再生エラー:', err);
             this.startRenderLoop();

@@ -60,7 +60,7 @@ const state = {
   audioQuality: localStorage.getItem('cape.audioQuality') || 'hq',
   stageFit: localStorage.getItem('cape.stageFit') || 'contain',
   background: localStorage.getItem('cape.background') || 'dark',
-  mouth: readStoredMouthAdjust()
+  mouth: defaultMouthAdjust()
 };
 
 const engine = new LipsyncEngine({
@@ -104,7 +104,7 @@ function boot() {
   applyAudioQuality(state.audioQuality);
   applyStageFit(state.stageFit);
   applyBackground(state.background);
-  applyMouthAdjust(state.mouth);
+  applyMouthAdjust(state.mouth, { persistToScene: false });
   bindEvents();
   render();
 }
@@ -233,7 +233,8 @@ async function buildSceneFromZip(zip, zipName, root, projectManifest) {
     id: `scene_${Date.now()}_${Math.random().toString(16).slice(2)}`,
     name,
     source: zipName,
-    files: normalizedFiles
+    files: normalizedFiles,
+    mouthAdjust: defaultMouthAdjust()
   };
 }
 
@@ -318,9 +319,11 @@ async function activateScene(sceneId) {
   if (!scene) return;
 
   state.activeSceneId = scene.id;
+  applyMouthAdjust(scene.mouthAdjust || defaultMouthAdjust(), { persistToScene: false });
   render();
   await engine.loadFiles(scene.files);
   await engine.start();
+  applyMouthAdjust(scene.mouthAdjust || defaultMouthAdjust(), { persistToScene: false });
   setStatus(`${scene.name} を再生中`);
 }
 
@@ -392,7 +395,8 @@ async function loadDemoScene(source, name, entries) {
     id: `demo_${source}_${Date.now()}_${Math.random().toString(16).slice(2)}`,
     name,
     source,
-    files
+    files,
+    mouthAdjust: defaultMouthAdjust()
   };
 }
 
@@ -485,7 +489,7 @@ function applyBackground(value) {
   el.appShell.classList.toggle('bg-checker', state.background === 'checker');
 }
 
-function applyMouthAdjust(next) {
+function applyMouthAdjust(next, options = {}) {
   state.mouth = {
     opacity: clampNumber(next.opacity, 0, 1, 1),
     brightness: clampNumber(next.brightness, 0.6, 1.4, 1),
@@ -494,7 +498,10 @@ function applyMouthAdjust(next) {
     offsetY: clampNumber(next.offsetY, -80, 80, 0),
     scale: clampNumber(next.scale, 0.7, 1.4, 1)
   };
-  localStorage.setItem('cape.mouthAdjust', JSON.stringify(state.mouth));
+  if (options.persistToScene !== false) {
+    const scene = activeScene();
+    if (scene) scene.mouthAdjust = { ...state.mouth };
+  }
   syncMouthInputs(state.mouth);
   engine.setMouthRenderAdjust(state.mouth);
 }
@@ -561,17 +568,6 @@ function defaultMouthAdjust() {
     offsetY: 0,
     scale: 1
   };
-}
-
-function readStoredMouthAdjust() {
-  try {
-    return {
-      ...defaultMouthAdjust(),
-      ...JSON.parse(localStorage.getItem('cape.mouthAdjust') || '{}')
-    };
-  } catch {
-    return defaultMouthAdjust();
-  }
 }
 
 function readMouthInputs() {
