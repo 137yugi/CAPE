@@ -348,9 +348,25 @@ button {
   border-radius: 10px;
 }
 
-.settings-grid {
+.settings-grid,
+.settings-section {
   display: grid;
   gap: 10px;
+}
+
+.settings-section {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.settings-section h3,
+.sheet-actions h3 {
+  margin: 0;
+  color: rgba(248, 248, 251, 0.88);
+  font-size: 13px;
+  letter-spacing: 0;
 }
 
 .field {
@@ -360,7 +376,8 @@ button {
   font-size: 12px;
 }
 
-.field input[type="text"] {
+.field input[type="text"],
+.field select {
   min-height: 46px;
   padding: 10px 12px;
   border-radius: 12px;

@@ -24,8 +24,10 @@ const el = {
   renameSceneBtn: $('renameSceneBtn'),
   uiOpacitySlider: $('uiOpacitySlider'),
   uiOpacityValue: $('uiOpacityValue'),
+  resetUiOpacityBtn: $('resetUiOpacityBtn'),
   sensitivitySlider: $('sensitivitySlider'),
   sensitivityValue: $('sensitivityValue'),
+  audioQualitySelect: $('audioQualitySelect'),
   sheetImportBtn: $('sheetImportBtn'),
   sheetDemoBtn: $('sheetDemoBtn'),
   statusPanel: $('statusPanel'),
@@ -39,7 +41,8 @@ const state = {
   loading: false,
   outputMode: new URLSearchParams(location.search).get('output') === '1',
   uiOpacity: Number(localStorage.getItem('cape.uiOpacity') || 86),
-  sensitivity: Number(localStorage.getItem('cape.sensitivity') || 58)
+  sensitivity: Number(localStorage.getItem('cape.sensitivity') || 58),
+  audioQuality: localStorage.getItem('cape.audioQuality') || 'hq'
 };
 
 const engine = new LipsyncEngine({
@@ -80,6 +83,7 @@ function boot() {
   if (state.outputMode) el.appShell.classList.add('output-mode');
   applyUiOpacity(state.uiOpacity);
   applySensitivity(state.sensitivity);
+  applyAudioQuality(state.audioQuality);
   bindEvents();
   render();
 }
@@ -101,9 +105,13 @@ function bindEvents() {
   el.uiOpacitySlider.addEventListener('input', (event) => {
     applyUiOpacity(Number(event.target.value));
   });
+  el.resetUiOpacityBtn.addEventListener('click', () => applyUiOpacity(86));
 
   el.sensitivitySlider.addEventListener('input', (event) => {
     applySensitivity(Number(event.target.value));
+  });
+  el.audioQualitySelect.addEventListener('change', (event) => {
+    applyAudioQuality(event.target.value);
   });
 }
 
@@ -396,7 +404,7 @@ function closeSheet() {
 }
 
 function applyUiOpacity(value) {
-  state.uiOpacity = Math.max(18, Math.min(100, value));
+  state.uiOpacity = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 86));
   localStorage.setItem('cape.uiOpacity', String(state.uiOpacity));
   el.uiOpacitySlider.value = String(state.uiOpacity);
   el.uiOpacityValue.textContent = `${state.uiOpacity}%`;
@@ -409,8 +417,15 @@ function applySensitivity(value) {
   el.sensitivitySlider.value = String(state.sensitivity);
   el.sensitivityValue.textContent = String(state.sensitivity);
   engine.setSensitivity(state.sensitivity);
-  engine.setHQAudioEnabled(true);
-  audioCapture.setHQAudioEnabled(true);
+}
+
+function applyAudioQuality(value) {
+  state.audioQuality = value === 'standard' ? 'standard' : 'hq';
+  localStorage.setItem('cape.audioQuality', state.audioQuality);
+  el.audioQualitySelect.value = state.audioQuality;
+  const hqEnabled = state.audioQuality === 'hq';
+  engine.setHQAudioEnabled(hqEnabled);
+  audioCapture.setHQAudioEnabled(hqEnabled);
 }
 
 function setStatus(message, status = '') {

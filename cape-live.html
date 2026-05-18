@@ -62,26 +62,44 @@
         </div>
 
         <div class="settings-grid">
-          <label class="field">
-            <span>現在のシーン名</span>
-            <input id="sceneNameInput" type="text" placeholder="Scene name" />
-          </label>
-          <button type="button" id="renameSceneBtn">名前を保存</button>
+          <section class="settings-section">
+            <h3>Scene</h3>
+            <label class="field">
+              <span>現在のシーン名</span>
+              <input id="sceneNameInput" type="text" placeholder="Scene name" />
+            </label>
+            <button type="button" id="renameSceneBtn">名前を保存</button>
+          </section>
 
-          <label class="field">
-            <span>操作UIの透明度</span>
-            <input id="uiOpacitySlider" type="range" min="18" max="100" value="86" />
-            <strong id="uiOpacityValue">86%</strong>
-          </label>
+          <section class="settings-section">
+            <h3>Display</h3>
+            <label class="field">
+              <span>操作UIの不透明度</span>
+              <input id="uiOpacitySlider" type="range" min="0" max="100" value="86" />
+              <strong id="uiOpacityValue">86%</strong>
+            </label>
+            <button type="button" id="resetUiOpacityBtn" class="ghost">操作UIを表示に戻す</button>
+          </section>
 
-          <label class="field">
-            <span>口パク感度</span>
-            <input id="sensitivitySlider" type="range" min="0" max="100" value="58" />
-            <strong id="sensitivityValue">58</strong>
-          </label>
+          <section class="settings-section">
+            <h3>Audio</h3>
+            <label class="field">
+              <span>口パク感度</span>
+              <input id="sensitivitySlider" type="range" min="0" max="100" value="58" />
+              <strong id="sensitivityValue">58</strong>
+            </label>
+            <label class="field">
+              <span>音声解析</span>
+              <select id="audioQualitySelect">
+                <option value="hq">HQ Audio</option>
+                <option value="standard">Standard</option>
+              </select>
+            </label>
+          </section>
         </div>
 
         <div class="sheet-actions">
+          <h3>Pack</h3>
           <button type="button" id="sheetImportBtn">Scene ZIPを追加</button>
           <button type="button" id="sheetDemoBtn" class="ghost">Demoを追加</button>
           <a class="output-link" id="outputLink" href="cape-live.html?output=1" target="_blank" rel="noopener">Outputを開く</a>
