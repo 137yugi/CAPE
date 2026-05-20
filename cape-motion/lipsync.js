@@ -48,6 +48,7 @@ class LipsyncEngine {
 
         // データ
         this.trackData = null;
+        this.fixedTrackMouthSize = null;
         this.mouthSprites = {};
         this.mouthSpriteUrls = {};
         this.activeSprite = null;
@@ -289,6 +290,7 @@ class LipsyncEngine {
 
     async _setupTrackData(trackData) {
         this.trackData = trackData;
+        this.fixedTrackMouthSize = this.measureFixedTrackMouthSize(trackData);
         this.log('トラッキング: ' + this.trackData.frames.length + 'フレーム');
     }
 
@@ -695,16 +697,18 @@ class LipsyncEngine {
         if (!sprite) return;
 
         const quad = frame.quad;
-        const adjustedQuad = this.applyCalibrationToQuad(quad, data);
+        const calibratedQuad = this.applyStaticCalibrationToQuad(quad, data);
+        const fixedSizeQuad = this.freezeTrackedMouthSize(calibratedQuad);
+        const adjustedQuad = this.applyRuntimeMouthAdjust(fixedSizeQuad);
         this.drawWarpedSprite(sprite, adjustedQuad);
     }
 
-    applyCalibrationToQuad(quad, data) {
+    applyStaticCalibrationToQuad(quad, data) {
         const calib = data.calibration || { offset: [0, 0], scale: 1, rotation: 0 };
         const applyCalib = data.calibrationApplied === true;
         let adjustedQuad = quad.map((pt) => [pt[0], pt[1]]);
         if (!applyCalib) {
-            return this.applyRuntimeMouthAdjust(adjustedQuad);
+            return adjustedQuad;
         }
 
         const offsetX = calib.offset[0] || 0;
@@ -732,7 +736,91 @@ class LipsyncEngine {
             return [rx, ry];
         });
 
-        return this.applyRuntimeMouthAdjust(adjustedQuad);
+        return adjustedQuad;
+    }
+
+    measureFixedTrackMouthSize(data) {
+        if (!data?.frames?.length) return null;
+
+        const widths = [];
+        const heights = [];
+        for (const frame of data.frames) {
+            if (!frame?.valid || !Array.isArray(frame.quad) || frame.quad.length !== 4) continue;
+            const basis = this.measureQuadBasis(this.applyStaticCalibrationToQuad(frame.quad, data));
+            if (!basis) continue;
+            widths.push(basis.width);
+            heights.push(basis.height);
+        }
+
+        if (!widths.length || !heights.length) return null;
+        return {
+            width: this.median(widths),
+            height: this.median(heights)
+        };
+    }
+
+    freezeTrackedMouthSize(quad) {
+        const fixed = this.fixedTrackMouthSize;
+        const basis = this.measureQuadBasis(quad);
+        if (!fixed || !basis) return quad;
+
+        const halfW = fixed.width / 2;
+        const halfH = fixed.height / 2;
+        const x = basis.xAxis;
+        const y = [-x[1], x[0]];
+        const cx = basis.center[0];
+        const cy = basis.center[1];
+
+        return [
+            [cx - x[0] * halfW - y[0] * halfH, cy - x[1] * halfW - y[1] * halfH],
+            [cx + x[0] * halfW - y[0] * halfH, cy + x[1] * halfW - y[1] * halfH],
+            [cx + x[0] * halfW + y[0] * halfH, cy + x[1] * halfW + y[1] * halfH],
+            [cx - x[0] * halfW + y[0] * halfH, cy - x[1] * halfW + y[1] * halfH]
+        ];
+    }
+
+    measureQuadBasis(quad) {
+        if (!Array.isArray(quad) || quad.length !== 4) return null;
+        const [q0, q1, q2, q3] = quad;
+        if (![q0, q1, q2, q3].every((pt) => Array.isArray(pt) && pt.length >= 2)) return null;
+
+        const width = (this.distance(q0, q1) + this.distance(q3, q2)) / 2;
+        const height = (this.distance(q0, q3) + this.distance(q1, q2)) / 2;
+        if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null;
+
+        let dx = q1[0] - q0[0];
+        let dy = q1[1] - q0[1];
+        const len = Math.hypot(dx, dy);
+        if (!len) {
+            dx = 1;
+            dy = 0;
+        } else {
+            dx /= len;
+            dy /= len;
+        }
+
+        return {
+            center: [
+                (q0[0] + q1[0] + q2[0] + q3[0]) / 4,
+                (q0[1] + q1[1] + q2[1] + q3[1]) / 4
+            ],
+            xAxis: [dx, dy],
+            width,
+            height
+        };
+    }
+
+    distance(a, b) {
+        return Math.hypot(b[0] - a[0], b[1] - a[1]);
+    }
+
+    median(values) {
+        const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+        if (!sorted.length) return 0;
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2
+            ? sorted[mid]
+            : (sorted[mid - 1] + sorted[mid]) / 2;
     }
 
     applyRuntimeMouthAdjust(quad) {

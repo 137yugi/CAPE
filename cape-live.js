@@ -237,7 +237,7 @@ async function buildSceneFromZip(zip, zipName, root, projectManifest) {
     name,
     source: zipName,
     files: normalizedFiles,
-    mouthAdjust: defaultMouthAdjust()
+    mouthAdjust: initialMouthAdjust(manifest)
   };
 }
 
@@ -463,15 +463,7 @@ function applyBackground(value) {
 }
 
 function applyMouthAdjust(next, options = {}) {
-  state.mouth = {
-    opacity: clampNumber(next.opacity, 0, 1, 1),
-    brightness: clampNumber(next.brightness, 0.6, 1.4, 1),
-    saturation: clampNumber(next.saturation, 0.5, 1.6, 1),
-    offsetX: clampNumber(next.offsetX, -80, 80, 0),
-    offsetY: clampNumber(next.offsetY, -80, 80, 0),
-    scale: clampNumber(next.scale, 0.7, 1.4, 1),
-    trackOffset: clampNumber(next.trackOffset, -0.5, 0.5, 0)
-  };
+  state.mouth = normalizeMouthAdjust(next);
   if (options.persistToScene !== false) {
     const scene = activeScene();
     if (scene) scene.mouthAdjust = { ...state.mouth };
@@ -543,6 +535,24 @@ function defaultMouthAdjust() {
     offsetY: 0,
     scale: 1,
     trackOffset: 0
+  };
+}
+
+function initialMouthAdjust(manifest) {
+  const manifestAdjust = manifest?.mouthAdjust || manifest?.defaultMouthAdjust || null;
+  if (!manifestAdjust) return defaultMouthAdjust();
+  return normalizeMouthAdjust({ ...defaultMouthAdjust(), ...manifestAdjust });
+}
+
+function normalizeMouthAdjust(next = {}) {
+  return {
+    opacity: clampNumber(next.opacity, 0, 1, 1),
+    brightness: clampNumber(next.brightness, 0.6, 1.4, 1),
+    saturation: clampNumber(next.saturation, 0.5, 1.6, 1),
+    offsetX: clampNumber(next.offsetX, -80, 80, 0),
+    offsetY: clampNumber(next.offsetY, -80, 80, 0),
+    scale: clampNumber(next.scale, 0.7, 1.4, 1),
+    trackOffset: clampNumber(next.trackOffset, -0.5, 0.5, 0)
   };
 }
 
