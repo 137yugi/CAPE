@@ -65,6 +65,11 @@ const state = {
   mouth: defaultMouthAdjust()
 };
 
+const DEMO_SCENE_ZIPS = [
+  { url: 'demo-data/cape-scenes/cool.zip', fileName: 'cool.zip' },
+  { url: 'demo-data/cape-scenes/tryv.zip', fileName: 'tryv.zip' }
+];
+
 const engine = new LipsyncEngine({
   elements: {
     video: el.video,
@@ -352,7 +357,10 @@ async function addDemoScenes() {
   state.loading = true;
   setStatus('Demoを読み込み中...');
   try {
-    const demos = await loadDemoZip('demo-data/cape-scenes/cool.zip', 'cool.zip');
+    const demos = [];
+    for (const demo of DEMO_SCENE_ZIPS) {
+      demos.push(...await loadDemoZip(demo.url, demo.fileName));
+    }
 
     state.scenes.push(...demos);
     if (!state.activeSceneId) await activateScene(demos[0].id);
