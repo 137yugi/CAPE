@@ -42,6 +42,8 @@ const el = {
   mouthOffsetYValue: $('mouthOffsetYValue'),
   mouthScaleSlider: $('mouthScaleSlider'),
   mouthScaleValue: $('mouthScaleValue'),
+  trackOffsetSlider: $('trackOffsetSlider'),
+  trackOffsetValue: $('trackOffsetValue'),
   resetMouthBtn: $('resetMouthBtn'),
   sheetImportBtn: $('sheetImportBtn'),
   sheetDemoBtn: $('sheetDemoBtn'),
@@ -147,7 +149,8 @@ function bindEvents() {
     el.mouthSaturationSlider,
     el.mouthOffsetXSlider,
     el.mouthOffsetYSlider,
-    el.mouthScaleSlider
+    el.mouthScaleSlider,
+    el.trackOffsetSlider
   ].forEach((input) => {
     input.addEventListener('input', () => {
       applyMouthAdjust(readMouthInputs());
@@ -496,7 +499,8 @@ function applyMouthAdjust(next, options = {}) {
     saturation: clampNumber(next.saturation, 0.5, 1.6, 1),
     offsetX: clampNumber(next.offsetX, -80, 80, 0),
     offsetY: clampNumber(next.offsetY, -80, 80, 0),
-    scale: clampNumber(next.scale, 0.7, 1.4, 1)
+    scale: clampNumber(next.scale, 0.7, 1.4, 1),
+    trackOffset: clampNumber(next.trackOffset, -0.5, 0.5, 0)
   };
   if (options.persistToScene !== false) {
     const scene = activeScene();
@@ -504,6 +508,7 @@ function applyMouthAdjust(next, options = {}) {
   }
   syncMouthInputs(state.mouth);
   engine.setMouthRenderAdjust(state.mouth);
+  engine.setTrackTimeOffset(state.mouth.trackOffset);
 }
 
 function setStatus(message, status = '') {
@@ -566,7 +571,8 @@ function defaultMouthAdjust() {
     saturation: 1,
     offsetX: 0,
     offsetY: 0,
-    scale: 1
+    scale: 1,
+    trackOffset: 0
   };
 }
 
@@ -577,7 +583,8 @@ function readMouthInputs() {
     saturation: Number(el.mouthSaturationSlider.value) / 100,
     offsetX: Number(el.mouthOffsetXSlider.value),
     offsetY: Number(el.mouthOffsetYSlider.value),
-    scale: Number(el.mouthScaleSlider.value) / 100
+    scale: Number(el.mouthScaleSlider.value) / 100,
+    trackOffset: Number(el.trackOffsetSlider.value) / 100
   };
 }
 
@@ -588,6 +595,7 @@ function syncMouthInputs(adjust) {
   const offsetX = Math.round(adjust.offsetX);
   const offsetY = Math.round(adjust.offsetY);
   const scale = Math.round(adjust.scale * 100);
+  const trackOffset = Math.round(adjust.trackOffset * 100);
 
   el.mouthOpacitySlider.value = String(opacity);
   el.mouthOpacityValue.textContent = `${opacity}%`;
@@ -601,6 +609,14 @@ function syncMouthInputs(adjust) {
   el.mouthOffsetYValue.textContent = `${offsetY}px`;
   el.mouthScaleSlider.value = String(scale);
   el.mouthScaleValue.textContent = `${scale}%`;
+  el.trackOffsetSlider.value = String(trackOffset);
+  el.trackOffsetValue.textContent = formatTrackOffset(adjust.trackOffset);
+}
+
+function formatTrackOffset(seconds) {
+  const value = clampNumber(seconds, -0.5, 0.5, 0);
+  if (Math.abs(value) < 0.005) return '0.00s';
+  return `${value > 0 ? '+' : ''}${value.toFixed(2)}s`;
 }
 
 function clampNumber(value, min, max, fallback) {

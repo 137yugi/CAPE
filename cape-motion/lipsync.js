@@ -71,6 +71,7 @@ class LipsyncEngine {
             offsetY: 0,
             scale: 1
         };
+        this.trackTimeOffsetSeconds = 0;
 
         // 口状態
         this.mouthState = 'closed';
@@ -118,6 +119,15 @@ class LipsyncEngine {
             ...adjust
         };
         this.handleResize();
+    }
+
+    setTrackTimeOffset(seconds = 0) {
+        const value = Number(seconds);
+        this.trackTimeOffsetSeconds = Number.isFinite(value)
+            ? Math.max(-0.5, Math.min(0.5, value))
+            : 0;
+        this.lastFrameIndex = null;
+        this.renderFrame();
     }
 
     log(msg) {
@@ -643,9 +653,7 @@ class LipsyncEngine {
         const totalFrames = data.frames.length;
         if (!totalFrames) return;
 
-        const currentTime = video.currentTime;
-        const fps = data.fps || 30;
-        const frameIndex = Math.floor(currentTime * fps) % totalFrames;
+        const frameIndex = this.getTrackFrameIndex(video.currentTime, data, totalFrames);
         this.lastFrameIndex = frameIndex;
         this.updateMouthTransform(frameIndex);
     }
@@ -658,8 +666,15 @@ class LipsyncEngine {
         const frameIndex =
             this.lastFrameIndex !== null
                 ? this.lastFrameIndex
-                : Math.floor(this.video.currentTime * (this.trackData.fps || 30)) % totalFrames;
+                : this.getTrackFrameIndex(this.video.currentTime, this.trackData, totalFrames);
         this.updateMouthTransform(frameIndex);
+    }
+
+    getTrackFrameIndex(currentTime, data, totalFrames) {
+        const fps = data.fps || 30;
+        const shiftedTime = currentTime + this.trackTimeOffsetSeconds;
+        const rawIndex = Math.floor(shiftedTime * fps);
+        return ((rawIndex % totalFrames) + totalFrames) % totalFrames;
     }
 
     updateMouthTransform(frameIndex) {
