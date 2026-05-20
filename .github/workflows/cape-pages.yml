@@ -28,12 +28,13 @@ jobs:
 
       - name: Prepare static artifact
         run: |
-          mkdir -p public/demo-data/official_assets
+          mkdir -p public/demo-data/official_assets public/demo-data/cape-scenes
           cp cape-live.html public/index.html
           cp cape-live.html cape-live.css cape-live.js public/
           cp -R cape-assets cape-motion cape-vendor public/
           cp -R demo-data/official_assets/assets14 public/demo-data/official_assets/
           cp -R demo-data/official_assets/assets23 public/demo-data/official_assets/
+          cp demo-data/cape-scenes/*.zip public/demo-data/cape-scenes/
           touch public/.nojekyll
 
       - name: Configure Pages
