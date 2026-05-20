@@ -352,26 +352,7 @@ async function addDemoScenes() {
   state.loading = true;
   setStatus('Demoを読み込み中...');
   try {
-    const demos = await Promise.all([
-      loadDemoScene('assets14', 'Demo A', [
-        ['demo-data/official_assets/assets14/pinkchan_mouthless_h264.mp4', 'demo_mouthless_h264.mp4'],
-        ['demo-data/official_assets/assets14/mouth_track.json', 'mouth_track.json'],
-        ['demo-data/official_assets/assets14/mouth/closed.png', 'mouth/closed.png'],
-        ['demo-data/official_assets/assets14/mouth/open.png', 'mouth/open.png'],
-        ['demo-data/official_assets/assets14/mouth/half.png', 'mouth/half.png'],
-        ['demo-data/official_assets/assets14/mouth/e.png', 'mouth/e.png'],
-        ['demo-data/official_assets/assets14/mouth/u.png', 'mouth/u.png']
-      ]),
-      loadDemoScene('assets23', 'Demo B', [
-        ['demo-data/official_assets/assets23/loop_mouthless_h264.mp4', 'demo_mouthless_h264.mp4'],
-        ['demo-data/official_assets/assets23/mouth_track.json', 'mouth_track.json'],
-        ['demo-data/official_assets/assets23/mouth/closed.png', 'mouth/closed.png'],
-        ['demo-data/official_assets/assets23/mouth/open.png', 'mouth/open.png'],
-        ['demo-data/official_assets/assets23/mouth/half.png', 'mouth/half.png'],
-        ['demo-data/official_assets/assets23/mouth/e.png', 'mouth/e.png'],
-        ['demo-data/official_assets/assets23/mouth/u.png', 'mouth/u.png']
-      ])
-    ]);
+    const demos = await loadDemoZip('demo-data/cape-scenes/cool.zip', 'cool.zip');
 
     state.scenes.push(...demos);
     if (!state.activeSceneId) await activateScene(demos[0].id);
@@ -384,23 +365,12 @@ async function addDemoScenes() {
   }
 }
 
-async function loadDemoScene(source, name, entries) {
-  const files = [];
-  for (const [url, path] of entries) {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`${source}: ${url} を読み込めません。`);
-    const blob = await response.blob();
-    const file = new File([blob], path.split('/').pop(), { type: guessMime(path) });
-    defineRelativePath(file, path);
-    files.push(file);
-  }
-  return {
-    id: `demo_${source}_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-    name,
-    source,
-    files,
-    mouthAdjust: defaultMouthAdjust()
-  };
+async function loadDemoZip(url, fileName) {
+  const response = await fetch(url, { cache: 'no-cache' });
+  if (!response.ok) throw new Error(`${fileName}: Demo ZIPを読み込めません。`);
+  const blob = await response.blob();
+  const file = new File([blob], fileName, { type: 'application/zip' });
+  return importSceneZip(file);
 }
 
 function render() {
