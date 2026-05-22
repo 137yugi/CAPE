@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>CAPE ANIME</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="cape-live.css?v=20260523-cape-labels" />
-    <script src="cape-vendor/jszip.min.js"></script>
+    <link rel="stylesheet" href="cape-live.css?v=20260523-cape-only" />
   </head>
   <body>
     <main class="cape-live" id="appShell">
@@ -173,11 +172,11 @@
         <div class="status-panel" id="statusPanel">MotionPNGTuber互換CAPEファイルを読み込めます。</div>
       </aside>
 
-      <input id="zipInput" type="file" accept=".zip,application/zip" multiple hidden />
+      <input id="zipInput" type="file" accept=".cape,application/x-cape" multiple hidden />
     </main>
 
-    <script src="cape-motion/audio-capture.js?v=20260523-cape-labels"></script>
-    <script src="cape-motion/lipsync.js?v=20260523-cape-labels"></script>
-    <script src="cape-live.js?v=20260523-cape-labels"></script>
+    <script src="cape-motion/audio-capture.js?v=20260523-cape-only"></script>
+    <script src="cape-motion/lipsync.js?v=20260523-cape-only"></script>
+    <script src="cape-live.js?v=20260523-cape-only"></script>
   </body>
 </html>

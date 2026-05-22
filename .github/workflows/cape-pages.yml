@@ -38,7 +38,7 @@ jobs:
           cp -R cape-assets cape-motion cape-vendor public/
           cp -R demo-data/official_assets/assets14 public/demo-data/official_assets/
           cp -R demo-data/official_assets/assets23 public/demo-data/official_assets/
-          cp demo-data/cape-scenes/*.zip public/demo-data/cape-scenes/
+          cp demo-data/cape-scenes/*.cape public/demo-data/cape-scenes/
           touch public/.nojekyll
 
       - name: Configure Pages

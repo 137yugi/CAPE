@@ -1,6 +1,8 @@
-/* global JSZip, LipsyncEngine, AudioCapture */
+/* global LipsyncEngine, AudioCapture */
 
 const $ = (id) => document.getElementById(id);
+const CAPE_MAGIC = 'CAPEv001';
+const textDecoder = new TextDecoder();
 
 const el = {
   appShell: $('appShell'),
@@ -74,10 +76,10 @@ const state = {
   mouth: defaultMouthAdjust()
 };
 
-const DEMO_SCENE_ZIPS = [
-  { url: 'demo-data/cape-scenes/cool.zip', fileName: 'cool.cape' },
-  { url: 'demo-data/cape-scenes/tryv.zip', fileName: 'tryv.cape' },
-  { url: 'demo-data/cape-scenes/pink.zip', fileName: 'pink.cape' }
+const DEMO_SCENE_PACKAGES = [
+  { url: 'demo-data/cape-scenes/cool.cape', fileName: 'cool.cape' },
+  { url: 'demo-data/cape-scenes/tryv.cape', fileName: 'tryv.cape' },
+  { url: 'demo-data/cape-scenes/pink.cape', fileName: 'pink.cape' }
 ];
 
 const engine = new LipsyncEngine({
@@ -258,7 +260,7 @@ async function handleZipInput(event) {
   setStatus('CAPEファイルを読み込み中...');
   try {
     for (const file of files) {
-      const imported = await importSceneZip(file);
+      const imported = await importCapeFile(file);
       state.scenes.push(...imported);
     }
     if (!state.activeSceneId && state.scenes[0]) {
@@ -273,119 +275,86 @@ async function handleZipInput(event) {
   }
 }
 
-async function importSceneZip(file) {
-  if (!window.JSZip) {
-    throw new Error('CAPEファイルを展開できません。ネットワークを確認してください。');
+async function importCapeFile(file) {
+  if (/\.zip$/i.test(file.name)) {
+    throw new Error('ZIPは読み込めません。CAPE Packagerで.capeに変換してください。');
   }
 
-  const zip = await JSZip.loadAsync(file);
-  const manifest = await readJson(zip, 'manifest.json');
-  const sceneRoots = detectSceneRoots(zip, manifest);
-  const scenes = [];
-
-  for (const root of sceneRoots) {
-    const scene = await buildSceneFromZip(zip, file.name, root, manifest);
-    scenes.push(scene);
-  }
-
-  if (!scenes.length) {
-    throw new Error('CAPEファイルに有効なMotionPNGTuberデータが見つかりません。');
-  }
-
-  return scenes;
+  const packageData = parseCapePackage(await file.arrayBuffer());
+  const scene = buildSceneFromCapePackage(packageData, file.name);
+  validateMotionScene(scene.files, scene.name);
+  return [scene];
 }
 
-function detectSceneRoots(zip, manifest) {
-  if (manifest?.format === 'cape-project' && Array.isArray(manifest.scenes)) {
-    return manifest.scenes.map((scene) => normalizeRoot(scene.path || `scenes/${scene.id || scene.name || ''}`));
+function parseCapePackage(buffer) {
+  if (buffer.byteLength < 12) {
+    throw new Error('CAPEファイルが壊れています。');
   }
 
-  const roots = new Set();
-  for (const path of Object.keys(zip.files)) {
-    const normalized = path.replace(/\\/g, '/');
-    const match = normalized.match(/^scenes\/([^/]+)\//);
-    if (match) roots.add(`scenes/${match[1]}/`);
+  const bytes = new Uint8Array(buffer);
+  const magic = textDecoder.decode(bytes.slice(0, 8));
+  if (magic !== CAPE_MAGIC) {
+    throw new Error('CAPE v1ファイルではありません。');
   }
-  if (roots.size) return Array.from(roots);
-  return [''];
+
+  const manifestLength = new DataView(buffer).getUint32(8, true);
+  const manifestStart = 12;
+  const manifestEnd = manifestStart + manifestLength;
+  if (manifestEnd > buffer.byteLength) {
+    throw new Error('CAPE manifestが壊れています。');
+  }
+
+  let manifest = null;
+  try {
+    manifest = JSON.parse(textDecoder.decode(bytes.slice(manifestStart, manifestEnd)));
+  } catch {
+    throw new Error('CAPE manifestを読めません。');
+  }
+
+  if (manifest?.format !== 'cape-scene-package' || manifest.version !== 1 || !Array.isArray(manifest.files)) {
+    throw new Error('対応していないCAPE形式です。');
+  }
+
+  return {
+    buffer,
+    manifest,
+    payloadStart: manifestEnd
+  };
 }
 
-async function buildSceneFromZip(zip, zipName, root, projectManifest) {
-  const rootManifest = await readJson(zip, `${root}manifest.json`);
-  const manifest = rootManifest || (root ? null : projectManifest);
-  const files = filesUnderRoot(zip, root);
-  const name = pickSceneName({ manifest, zipName, root });
-  const normalizedFiles = await normalizeSceneFiles(files, manifest, root);
-  validateMotionScene(normalizedFiles, name);
+function buildSceneFromCapePackage(packageData, sourceName) {
+  const { buffer, manifest, payloadStart } = packageData;
+  const sceneMeta = manifest.scene || {};
+  const files = manifest.files.map((entry) => {
+    const path = normalizePackagePath(entry.path);
+    const offset = Number(entry.offset);
+    const size = Number(entry.size);
+    if (!path || !Number.isInteger(offset) || !Number.isInteger(size) || offset < 0 || size < 0) {
+      throw new Error('CAPE file tableが壊れています。');
+    }
+
+    const start = payloadStart + offset;
+    const end = start + size;
+    if (start < payloadStart || end > buffer.byteLength) {
+      throw new Error(`${path}: CAPE payloadが壊れています。`);
+    }
+
+    const file = new File([buffer.slice(start, end)], path.split('/').pop() || path, {
+      type: entry.mime || guessMime(path)
+    });
+    defineRelativePath(file, path);
+    return file;
+  });
 
   return {
     id: `scene_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-    name,
-    source: zipName,
-    files: normalizedFiles,
-    mouthAdjust: initialMouthAdjust(manifest)
+    name: manifest.name || cleanPackageName(sourceName) || 'Scene',
+    source: sourceName,
+    files,
+    mouthAdjust: initialMouthAdjust({
+      mouthAdjust: sceneMeta.mouthAdjust || manifest.mouthAdjust
+    })
   };
-}
-
-function filesUnderRoot(zip, root) {
-  const files = [];
-  for (const [path, entry] of Object.entries(zip.files)) {
-    if (entry.dir) continue;
-    if (root && !path.startsWith(root)) continue;
-    if (path.includes('__MACOSX/') || path.endsWith('.DS_Store')) continue;
-    files.push({ path, entry });
-  }
-  return files;
-}
-
-async function normalizeSceneFiles(files, manifest, root) {
-  const out = [];
-  const manifestPaths = collectManifestPaths(manifest);
-
-  for (const item of files) {
-    const relative = stripRoot(item.path, root);
-    if (!relative || relative === 'manifest.json') continue;
-    const blob = await item.entry.async('blob');
-    const mapped = mapPath(relative, manifestPaths);
-    const file = new File([blob], mapped.name, { type: guessMime(mapped.path) });
-    defineRelativePath(file, mapped.path);
-    out.push(file);
-  }
-
-  return out;
-}
-
-function collectManifestPaths(manifest) {
-  if (!manifest) return null;
-  return {
-    video: manifest.video || manifest.baseVideo || null,
-    track: manifest.track || manifest.mouthTrack || 'mouth_track.json',
-    mouth: manifest.mouth || manifest.mouthSet || {}
-  };
-}
-
-function mapPath(relative, manifestPaths) {
-  const normalized = relative.replace(/\\/g, '/');
-  const lower = normalized.toLowerCase();
-
-  if (manifestPaths?.video && normalized === manifestPaths.video) {
-    return { path: 'scene_mouthless_h264.mp4', name: 'scene_mouthless_h264.mp4' };
-  }
-  if (manifestPaths?.track && normalized === manifestPaths.track) {
-    return { path: 'mouth_track.json', name: 'mouth_track.json' };
-  }
-
-  for (const state of ['closed', 'open', 'half', 'e', 'u']) {
-    if (manifestPaths?.mouth?.[state] && normalized === manifestPaths.mouth[state]) {
-      return { path: `mouth/${state}.png`, name: `${state}.png` };
-    }
-  }
-
-  if (lower.endsWith('.mp4') && !lower.includes('mouthless')) {
-    return { path: 'scene_mouthless_h264.mp4', name: 'scene_mouthless_h264.mp4' };
-  }
-
-  return { path: normalized, name: normalized.split('/').pop() || normalized };
 }
 
 function validateMotionScene(files, name) {
@@ -439,8 +408,8 @@ async function addDemoScenes() {
   setStatus('Demoを読み込み中...');
   try {
     const demos = [];
-    for (const demo of DEMO_SCENE_ZIPS) {
-      demos.push(...await loadDemoZip(demo.url, demo.fileName));
+    for (const demo of DEMO_SCENE_PACKAGES) {
+      demos.push(...await loadDemoPackage(demo.url, demo.fileName));
     }
 
     state.scenes.push(...demos);
@@ -454,12 +423,12 @@ async function addDemoScenes() {
   }
 }
 
-async function loadDemoZip(url, fileName) {
+async function loadDemoPackage(url, fileName) {
   const response = await fetch(url, { cache: 'no-cache' });
   if (!response.ok) throw new Error(`${fileName}: Demo CAPEファイルを読み込めません。`);
   const blob = await response.blob();
-  const file = new File([blob], fileName, { type: 'application/zip' });
-  return importSceneZip(file);
+  const file = new File([blob], fileName, { type: 'application/x-cape' });
+  return importCapeFile(file);
 }
 
 function render() {
@@ -567,26 +536,6 @@ function setStatus(message, status = '') {
   el.statusPanel.dataset.status = status;
 }
 
-function normalizeRoot(path = '') {
-  const normalized = String(path).replace(/\\/g, '/').replace(/^\/+/, '');
-  return normalized && !normalized.endsWith('/') ? `${normalized}/` : normalized;
-}
-
-function stripRoot(path, root) {
-  const normalized = path.replace(/\\/g, '/');
-  return root ? normalized.slice(root.length) : normalized;
-}
-
-async function readJson(zip, path) {
-  const entry = zip.files[path];
-  if (!entry || entry.dir) return null;
-  try {
-    return JSON.parse(await entry.async('text'));
-  } catch {
-    return null;
-  }
-}
-
 function defineRelativePath(file, path) {
   try {
     Object.defineProperty(file, 'webkitRelativePath', {
@@ -598,21 +547,15 @@ function defineRelativePath(file, path) {
   }
 }
 
-function pickSceneName({ manifest, zipName, root }) {
-  const zipBase = cleanZipName(zipName, '');
-  if (!root) return manifest?.name || manifest?.title || zipBase || 'Scene';
-
-  const folderName = cleanZipName(zipName, root);
-  return manifest?.name || manifest?.title || folderName || zipBase || 'Scene';
+function normalizePackagePath(path) {
+  return String(path || '').replace(/\\/g, '/').replace(/^\/+/, '');
 }
 
-function cleanZipName(zipName, root) {
-  const raw = root ? root.replace(/^scenes\//, '').replace(/\/$/, '') : zipName.replace(/\.(zip|cape)$/i, '');
-  const base = decodeURIComponent(raw)
+function cleanPackageName(fileName) {
+  return decodeURIComponent(String(fileName || '').replace(/\.cape$/i, ''))
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  return base || 'Scene';
 }
 
 function defaultMouthAdjust() {
