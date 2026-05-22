@@ -67,7 +67,8 @@ const state = {
 
 const DEMO_SCENE_ZIPS = [
   { url: 'demo-data/cape-scenes/cool.zip', fileName: 'cool.zip' },
-  { url: 'demo-data/cape-scenes/tryv.zip', fileName: 'tryv.zip' }
+  { url: 'demo-data/cape-scenes/tryv.zip', fileName: 'tryv.zip' },
+  { url: 'demo-data/cape-scenes/pink.zip', fileName: 'pink.zip' }
 ];
 
 const engine = new LipsyncEngine({
@@ -519,7 +520,7 @@ function defineRelativePath(file, path) {
 
 function pickSceneName({ manifest, zipName, root }) {
   const zipBase = cleanZipName(zipName, '');
-  if (!root) return zipBase || manifest?.name || manifest?.title || 'Scene';
+  if (!root) return manifest?.name || manifest?.title || zipBase || 'Scene';
 
   const folderName = cleanZipName(zipName, root);
   return manifest?.name || manifest?.title || folderName || zipBase || 'Scene';
