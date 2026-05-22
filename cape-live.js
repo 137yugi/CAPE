@@ -55,19 +55,17 @@ const el = {
   sheetVersionText: $('sheetVersionText'),
   menuBannerList: $('menuBannerList'),
   creditsList: $('creditsList'),
-  outputLink: $('outputLink'),
   statusPanel: $('statusPanel'),
   zipInput: $('zipInput')
 };
 
-const SITE_CONFIG_URL = 'cape-site-config.json?v=20260523-admin-dashboard';
+const SITE_CONFIG_URL = 'cape-site-config.json?v=20260523-demo-refresh';
 
 const state = {
   scenes: [],
   activeSceneId: null,
   micRunning: false,
   loading: false,
-  outputMode: new URLSearchParams(location.search).get('output') === '1',
   uiOpacity: Number(localStorage.getItem('cape.uiOpacity') || 86),
   sensitivity: Number(localStorage.getItem('cape.sensitivity') || 58),
   audioQuality: localStorage.getItem('cape.audioQuality') || 'hq',
@@ -117,7 +115,6 @@ const audioCapture = new AudioCapture({
 });
 
 function boot() {
-  if (state.outputMode) el.appShell.classList.add('output-mode');
   loadSiteConfig();
   applyUiOpacity(state.uiOpacity);
   applySensitivity(state.sensitivity);
@@ -151,7 +148,6 @@ function applySiteConfig(config) {
   el.sheetProductName.textContent = name;
   el.appVersionText.textContent = version;
   el.sheetVersionText.textContent = version;
-  if (stable.outputUrl) el.outputLink.href = stable.outputUrl;
   renderMenuBanners(config?.banners || []);
   renderCredits(config?.credits || []);
 }
@@ -277,7 +273,7 @@ async function handleZipInput(event) {
 
 async function importCapeFile(file) {
   if (/\.zip$/i.test(file.name)) {
-    throw new Error('ZIPは読み込めません。CAPE Packagerで.capeに変換してください。');
+    throw new Error('ZIPは読み込めません。');
   }
 
   const packageData = parseCapePackage(await file.arrayBuffer());

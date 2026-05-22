@@ -1,4 +1,4 @@
-const CONFIG_URL = 'cape-site-config.json?v=20260523-admin';
+const CONFIG_URL = 'cape-site-config.json?v=20260523-demo-refresh';
 
 const el = {
   productMeta: document.getElementById('productMeta'),
@@ -52,7 +52,6 @@ function render(config) {
   const tools = config.tools || {};
   el.linkGrid.innerHTML = [
     linkCard('CAPE ANIME', stable.url),
-    linkCard('CAPE ANIME Output', stable.outputUrl),
     linkCard(tools.packager?.label || 'CAPE Packager', tools.packager?.url),
     linkCard(tools.maker?.label || 'CAPE Maker', tools.maker?.url, tools.maker?.status),
     linkCard(tools.repository?.label || 'Repository', tools.repository?.url),

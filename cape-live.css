@@ -251,7 +251,6 @@ button {
 .scene-button,
 .control-button,
 .sheet button,
-.output-link,
 .empty-actions button {
   min-height: 48px;
   border-radius: 12px;
@@ -488,8 +487,7 @@ button {
 }
 
 .sheet button,
-.empty-actions button,
-.output-link {
+.empty-actions button {
   display: grid;
   place-items: center;
   padding: 0 14px;
@@ -501,11 +499,6 @@ button {
 
 .sheet button.ghost,
 .empty-actions button.ghost {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--ink);
-}
-
-.output-link {
   background: rgba(255, 255, 255, 0.1);
   color: var(--ink);
 }
@@ -540,11 +533,6 @@ button {
 
 .credits-panel strong {
   color: rgba(248, 248, 251, 0.82);
-}
-
-.cape-live.output-mode .app-ui {
-  opacity: 0;
-  pointer-events: none;
 }
 
 @media (min-width: 820px) {

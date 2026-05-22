@@ -2,23 +2,22 @@
   "product": {
     "name": "CAPE ANIME",
     "shortName": "CAPE",
-    "version": "0.4.0",
-    "versionLabel": "v0.4.0",
+    "version": "0.4.1",
+    "versionLabel": "v0.4.1",
     "updatedAt": "2026-05-23",
     "previousName": "CAPE Live"
   },
   "channels": {
     "stable": {
       "label": "Latest",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "url": "https://137yugi.github.io/CAPE/",
       "aliasUrl": "https://137yugi.github.io/CAPE/cape-anime.html",
-      "outputUrl": "https://137yugi.github.io/CAPE/cape-anime.html?output=1",
       "status": "published"
     },
     "beta": {
       "label": "Beta",
-      "version": "0.4.0-beta",
+      "version": "0.4.1-beta",
       "url": "https://137yugi.github.io/CAPE/cape-anime-beta.html",
       "status": "same-build"
     }
