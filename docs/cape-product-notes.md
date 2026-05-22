@@ -6,7 +6,7 @@ CAPE ANIME is the lightweight runtime for CAPE packs.
 
 - Mobile-first PWA.
 - No required server for the live runtime.
-- Loads CAPE Scene ZIP and CAPE Project ZIP.
+- Loads CAPE Scene packages and CAPE Project packages.
 - Plays full-screen looping scene video.
 - Overlays mouth PNGs for mic-driven lip sync.
 - Lets streamers switch scenes from large bottom controls.

@@ -75,9 +75,9 @@ const state = {
 };
 
 const DEMO_SCENE_ZIPS = [
-  { url: 'demo-data/cape-scenes/cool.zip', fileName: 'cool.zip' },
-  { url: 'demo-data/cape-scenes/tryv.zip', fileName: 'tryv.zip' },
-  { url: 'demo-data/cape-scenes/pink.zip', fileName: 'pink.zip' }
+  { url: 'demo-data/cape-scenes/cool.zip', fileName: 'cool.cape' },
+  { url: 'demo-data/cape-scenes/tryv.zip', fileName: 'tryv.cape' },
+  { url: 'demo-data/cape-scenes/pink.zip', fileName: 'pink.cape' }
 ];
 
 const engine = new LipsyncEngine({
@@ -255,7 +255,7 @@ async function handleZipInput(event) {
   if (!files.length) return;
 
   state.loading = true;
-  setStatus('Scene ZIPを読み込み中...');
+  setStatus('CAPEファイルを読み込み中...');
   try {
     for (const file of files) {
       const imported = await importSceneZip(file);
@@ -264,9 +264,9 @@ async function handleZipInput(event) {
     if (!state.activeSceneId && state.scenes[0]) {
       await activateScene(state.scenes[0].id);
     }
-    setStatus(`${files.length}個のZIPを追加しました。`);
+    setStatus(`${files.length}個のCAPEファイルを追加しました。`);
   } catch (error) {
-    setStatus(error.message || 'ZIPの読み込みに失敗しました。', 'error');
+    setStatus(error.message || 'CAPEファイルの読み込みに失敗しました。', 'error');
   } finally {
     state.loading = false;
     render();
@@ -275,7 +275,7 @@ async function handleZipInput(event) {
 
 async function importSceneZip(file) {
   if (!window.JSZip) {
-    throw new Error('ZIPライブラリを読み込めません。ネットワークを確認してください。');
+    throw new Error('CAPEファイルを展開できません。ネットワークを確認してください。');
   }
 
   const zip = await JSZip.loadAsync(file);
@@ -289,7 +289,7 @@ async function importSceneZip(file) {
   }
 
   if (!scenes.length) {
-    throw new Error('Scene ZIPに有効なMotionPNGTuberデータが見つかりません。');
+    throw new Error('CAPEファイルに有効なMotionPNGTuberデータが見つかりません。');
   }
 
   return scenes;
@@ -456,7 +456,7 @@ async function addDemoScenes() {
 
 async function loadDemoZip(url, fileName) {
   const response = await fetch(url, { cache: 'no-cache' });
-  if (!response.ok) throw new Error(`${fileName}: Demo ZIPを読み込めません。`);
+  if (!response.ok) throw new Error(`${fileName}: Demo CAPEファイルを読み込めません。`);
   const blob = await response.blob();
   const file = new File([blob], fileName, { type: 'application/zip' });
   return importSceneZip(file);
@@ -475,7 +475,7 @@ function render() {
     const placeholder = document.createElement('button');
     placeholder.type = 'button';
     placeholder.className = 'scene-button';
-    placeholder.innerHTML = '<span class="scene-name">Add ZIP</span><span class="scene-meta">Scene</span>';
+    placeholder.innerHTML = '<span class="scene-name">Add CAPE</span><span class="scene-meta">Scene</span>';
     placeholder.addEventListener('click', openZipPicker);
     el.sceneStrip.append(placeholder);
     return;
@@ -607,7 +607,7 @@ function pickSceneName({ manifest, zipName, root }) {
 }
 
 function cleanZipName(zipName, root) {
-  const raw = root ? root.replace(/^scenes\//, '').replace(/\/$/, '') : zipName.replace(/\.zip$/i, '');
+  const raw = root ? root.replace(/^scenes\//, '').replace(/\/$/, '') : zipName.replace(/\.(zip|cape)$/i, '');
   const base = decodeURIComponent(raw)
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')

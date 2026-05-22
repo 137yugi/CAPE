@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>CAPE ANIME</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="cape-live.css?v=20260523-admin-dashboard" />
+    <link rel="stylesheet" href="cape-live.css?v=20260523-cape-labels" />
     <script src="cape-vendor/jszip.min.js"></script>
   </head>
   <body>
@@ -27,9 +27,9 @@
       <section class="empty-state app-ui" id="emptyState">
         <img src="cape-assets/cape-mark.png" alt="" class="empty-mark" />
         <h1 id="productNameText">CAPE ANIME</h1>
-        <p>Scene ZIPを追加して、下のボタンから表情やシーンを切り替えます。</p>
+        <p>CAPEファイルを追加して、下のボタンから表情やシーンを切り替えます。</p>
         <div class="empty-actions">
-          <button type="button" id="emptyImportBtn">ZIPを読み込む</button>
+          <button type="button" id="emptyImportBtn">CAPEを読み込む</button>
           <button type="button" id="demoBtn" class="ghost">Demoを開く</button>
         </div>
       </section>
@@ -160,7 +160,7 @@
 
         <div class="sheet-actions">
           <h3>Pack</h3>
-          <button type="button" id="sheetImportBtn">Scene ZIPを追加</button>
+          <button type="button" id="sheetImportBtn">CAPEファイルを追加</button>
           <button type="button" id="sheetDemoBtn" class="ghost">Demoを追加</button>
           <a class="output-link" id="outputLink" href="cape-anime.html?output=1" target="_blank" rel="noopener">Outputを開く</a>
         </div>
@@ -170,14 +170,14 @@
           <div id="creditsList"></div>
         </div>
 
-        <div class="status-panel" id="statusPanel">MotionPNGTuber互換Scene ZIPを読み込めます。</div>
+        <div class="status-panel" id="statusPanel">MotionPNGTuber互換CAPEファイルを読み込めます。</div>
       </aside>
 
       <input id="zipInput" type="file" accept=".zip,application/zip" multiple hidden />
     </main>
 
-    <script src="cape-motion/audio-capture.js?v=20260523-admin-dashboard"></script>
-    <script src="cape-motion/lipsync.js?v=20260523-admin-dashboard"></script>
-    <script src="cape-live.js?v=20260523-admin-dashboard"></script>
+    <script src="cape-motion/audio-capture.js?v=20260523-cape-labels"></script>
+    <script src="cape-motion/lipsync.js?v=20260523-cape-labels"></script>
+    <script src="cape-live.js?v=20260523-cape-labels"></script>
   </body>
 </html>
