@@ -1,0 +1,92 @@
+{
+  "product": {
+    "name": "CAPE ANIME",
+    "shortName": "CAPE",
+    "version": "0.4.0",
+    "versionLabel": "v0.4.0",
+    "updatedAt": "2026-05-23",
+    "previousName": "CAPE Live"
+  },
+  "channels": {
+    "stable": {
+      "label": "Latest",
+      "version": "0.4.0",
+      "url": "https://137yugi.github.io/CAPE/",
+      "aliasUrl": "https://137yugi.github.io/CAPE/cape-anime.html",
+      "outputUrl": "https://137yugi.github.io/CAPE/cape-anime.html?output=1",
+      "status": "published"
+    },
+    "beta": {
+      "label": "Beta",
+      "version": "0.4.0-beta",
+      "url": "https://137yugi.github.io/CAPE/cape-anime-beta.html",
+      "status": "same-build"
+    }
+  },
+  "tools": {
+    "dashboard": {
+      "label": "CAPE Admin",
+      "url": "https://137yugi.github.io/CAPE/cape-admin.html"
+    },
+    "packager": {
+      "label": "CAPE Packager",
+      "url": "https://137yugi.github.io/CAPE/cape-packager.html"
+    },
+    "maker": {
+      "label": "CAPE Maker",
+      "url": "",
+      "status": "preparing"
+    },
+    "repository": {
+      "label": "GitHub Repository",
+      "url": "https://github.com/137yugi/CAPE"
+    },
+    "actions": {
+      "label": "GitHub Actions",
+      "url": "https://github.com/137yugi/CAPE/actions"
+    },
+    "pages": {
+      "label": "GitHub Pages",
+      "url": "https://137yugi.github.io/CAPE/"
+    }
+  },
+  "banners": [
+    {
+      "id": "sales",
+      "label": "CAPE ANIME販売サイト",
+      "href": "",
+      "image": "",
+      "recommendedSize": "1200x375",
+      "placement": "menu"
+    },
+    {
+      "id": "community",
+      "label": "137yugiコミュニティ",
+      "href": "",
+      "image": "",
+      "recommendedSize": "1200x375",
+      "placement": "menu"
+    }
+  ],
+  "credits": [
+    {
+      "name": "ろてじん",
+      "role": "MotionPNGTuber Player / MIT License",
+      "url": "https://github.com/rotejin/MotionPNGTuber_Player"
+    },
+    {
+      "name": "137yugi",
+      "role": "CAPE ANIME design and product direction",
+      "url": "https://github.com/137yugi/CAPE"
+    }
+  ],
+  "management": {
+    "bannerSpec": "1200 x 375 px PNG/WebP recommended. Keep text inside the center 1020 x 255 px safe area.",
+    "promotionRule": "検証済みbetaの内容をmasterへ反映し、stable versionとasset versionを更新してGitHub Pagesへdeployする。",
+    "notes": [
+      "CAPE ANIME本体のバナーとクレジットはこのJSONを読む。",
+      "販売サイト・コミュニティURLはbanners[].hrefを更新する。",
+      "画像を差し替える場合はbanners[].imageに公開パスを入れる。"
+    ]
+  }
+}

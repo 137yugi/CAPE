@@ -2,7 +2,7 @@
 
 ## Core Direction
 
-CAPE Live is the lightweight runtime for CAPE packs.
+CAPE ANIME is the lightweight runtime for CAPE packs.
 
 - Mobile-first PWA.
 - No required server for the live runtime.
@@ -17,17 +17,17 @@ CAPE Live is the lightweight runtime for CAPE packs.
 Planned later, not a v1 blocker:
 
 - A separate server will collect TikTok Live comments/events.
-- When the TikTok Live SDK/server implementation is ready, CAPE Live should integrate with it.
-- CAPE Live should receive normalized event messages rather than depending directly on the TikTok SDK.
+- When the TikTok Live SDK/server implementation is ready, CAPE ANIME should integrate with it.
+- CAPE ANIME should receive normalized event messages rather than depending directly on the TikTok SDK.
 - Comment events can drive live features such as scene switching, reactions, overlays, alerts, counters, or pack-specific actions.
-- Keep CAPE Live usable without this server. TikTok integration is an optional enhancement layer.
+- Keep CAPE ANIME usable without this server. TikTok integration is an optional enhancement layer.
 
 Recommended integration shape:
 
 ```text
 TikTok Live SDK/server
   -> normalized event stream
-  -> CAPE Live event bridge
+  -> CAPE ANIME event bridge
   -> scene/reaction/action rules
 ```
 

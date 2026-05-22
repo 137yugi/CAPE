@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>CAPE Admin</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="cape-admin.css?v=20260523-admin" />
+  </head>
+  <body>
+    <main class="admin-shell">
+      <header class="admin-header">
+        <div>
+          <img src="cape-assets/cape-wordmark.png" alt="CAPE" />
+          <p id="productMeta">Loading</p>
+        </div>
+        <a id="stableLaunch" href="https://137yugi.github.io/CAPE/">Open Latest</a>
+      </header>
+
+      <section class="dashboard-grid">
+        <article class="panel primary-panel">
+          <div class="panel-head">
+            <p>Product</p>
+            <strong id="productVersion">v0.4.0</strong>
+          </div>
+          <h1 id="productName">CAPE ANIME</h1>
+          <dl class="dense-list" id="versionList"></dl>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <p>Release Gate</p>
+            <strong>Stable / Beta</strong>
+          </div>
+          <div class="release-grid" id="releaseGrid"></div>
+          <div class="note-box" id="promotionRule"></div>
+        </article>
+
+        <article class="panel wide-panel">
+          <div class="panel-head">
+            <p>URLs</p>
+            <strong>Operations</strong>
+          </div>
+          <div class="link-grid" id="linkGrid"></div>
+        </article>
+
+        <article class="panel wide-panel">
+          <div class="panel-head">
+            <p>Banners</p>
+            <strong id="bannerSpec">1200 x 375 px</strong>
+          </div>
+          <div class="banner-grid" id="bannerGrid"></div>
+          <div class="note-box">販売サイト・コミュニティリンクは <code>cape-site-config.json</code> の <code>banners</code> を更新するとCAPE ANIMEのMenuに反映されます。</div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <p>Credits</p>
+            <strong>MIT</strong>
+          </div>
+          <div class="credit-list" id="creditList"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <p>Config</p>
+            <strong>Single Source</strong>
+          </div>
+          <dl class="dense-list">
+            <div>
+              <dt>File</dt>
+              <dd><code>cape-site-config.json</code></dd>
+            </div>
+            <div>
+              <dt>Banner image safe area</dt>
+              <dd>center 1020 x 255 px</dd>
+            </div>
+            <div>
+              <dt>Deploy</dt>
+              <dd>push to <code>master</code></dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+    </main>
+
+    <script src="cape-admin.js?v=20260523-admin"></script>
+  </body>
+</html>

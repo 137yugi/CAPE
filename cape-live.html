@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>CAPE Live</title>
+    <title>CAPE ANIME</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="cape-live.css?v=20260523-demo-pink" />
+    <link rel="stylesheet" href="cape-live.css?v=20260523-admin-dashboard" />
     <script src="cape-vendor/jszip.min.js"></script>
   </head>
   <body>
@@ -20,12 +20,13 @@
 
       <header class="top-glass app-ui">
         <img src="cape-assets/cape-wordmark.png" alt="CAPE" class="wordmark" />
+        <div class="version-chip" id="appVersionText">v0.4.0</div>
         <div class="live-chip" id="liveStatus">No pack</div>
       </header>
 
       <section class="empty-state app-ui" id="emptyState">
         <img src="cape-assets/cape-mark.png" alt="" class="empty-mark" />
-        <h1>CAPE Live</h1>
+        <h1 id="productNameText">CAPE ANIME</h1>
         <p>Scene ZIPを追加して、下のボタンから表情やシーンを切り替えます。</p>
         <div class="empty-actions">
           <button type="button" id="emptyImportBtn">ZIPを読み込む</button>
@@ -56,10 +57,13 @@
         <div class="sheet-head">
           <div>
             <p>Live Settings</p>
-            <h2>CAPE</h2>
+            <h2 id="sheetProductName">CAPE ANIME</h2>
+            <small id="sheetVersionText">v0.4.0</small>
           </div>
           <button type="button" class="icon-button" id="closeSheetBtn">×</button>
         </div>
+
+        <div class="menu-banners" id="menuBannerList"></div>
 
         <div class="settings-grid">
           <section class="settings-section">
@@ -158,7 +162,12 @@
           <h3>Pack</h3>
           <button type="button" id="sheetImportBtn">Scene ZIPを追加</button>
           <button type="button" id="sheetDemoBtn" class="ghost">Demoを追加</button>
-          <a class="output-link" id="outputLink" href="cape-live.html?output=1" target="_blank" rel="noopener">Outputを開く</a>
+          <a class="output-link" id="outputLink" href="cape-anime.html?output=1" target="_blank" rel="noopener">Outputを開く</a>
+        </div>
+
+        <div class="credits-panel">
+          <h3>Credits</h3>
+          <div id="creditsList"></div>
         </div>
 
         <div class="status-panel" id="statusPanel">MotionPNGTuber互換Scene ZIPを読み込めます。</div>
@@ -167,8 +176,8 @@
       <input id="zipInput" type="file" accept=".zip,application/zip" multiple hidden />
     </main>
 
-    <script src="cape-motion/audio-capture.js?v=20260523-demo-pink"></script>
-    <script src="cape-motion/lipsync.js?v=20260523-demo-pink"></script>
-    <script src="cape-live.js?v=20260523-demo-pink"></script>
+    <script src="cape-motion/audio-capture.js?v=20260523-admin-dashboard"></script>
+    <script src="cape-motion/lipsync.js?v=20260523-admin-dashboard"></script>
+    <script src="cape-live.js?v=20260523-admin-dashboard"></script>
   </body>
 </html>

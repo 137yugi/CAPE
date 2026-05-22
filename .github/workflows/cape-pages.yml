@@ -1,4 +1,4 @@
-name: Deploy CAPE Live
+name: Deploy CAPE ANIME
 
 on:
   push:
@@ -31,7 +31,10 @@ jobs:
           mkdir -p public/demo-data/official_assets public/demo-data/cape-scenes
           cp cape-live.html public/index.html
           cp cape-live.html cape-live.css cape-live.js public/
+          cp cape-live.html public/cape-anime.html
+          cp cape-live.html public/cape-anime-beta.html
           cp cape-packager.html cape-packager.css cape-packager.js public/
+          cp cape-admin.html cape-admin.css cape-admin.js cape-site-config.json public/
           cp -R cape-assets cape-motion cape-vendor public/
           cp -R demo-data/official_assets/assets14 public/demo-data/official_assets/
           cp -R demo-data/official_assets/assets23 public/demo-data/official_assets/

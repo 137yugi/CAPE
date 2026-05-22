@@ -47,9 +47,18 @@ const el = {
   resetMouthBtn: $('resetMouthBtn'),
   sheetImportBtn: $('sheetImportBtn'),
   sheetDemoBtn: $('sheetDemoBtn'),
+  productNameText: $('productNameText'),
+  appVersionText: $('appVersionText'),
+  sheetProductName: $('sheetProductName'),
+  sheetVersionText: $('sheetVersionText'),
+  menuBannerList: $('menuBannerList'),
+  creditsList: $('creditsList'),
+  outputLink: $('outputLink'),
   statusPanel: $('statusPanel'),
   zipInput: $('zipInput')
 };
+
+const SITE_CONFIG_URL = 'cape-site-config.json?v=20260523-admin-dashboard';
 
 const state = {
   scenes: [],
@@ -107,6 +116,7 @@ const audioCapture = new AudioCapture({
 
 function boot() {
   if (state.outputMode) el.appShell.classList.add('output-mode');
+  loadSiteConfig();
   applyUiOpacity(state.uiOpacity);
   applySensitivity(state.sensitivity);
   applyAudioQuality(state.audioQuality);
@@ -115,6 +125,76 @@ function boot() {
   applyMouthAdjust(state.mouth, { persistToScene: false });
   bindEvents();
   render();
+}
+
+async function loadSiteConfig() {
+  try {
+    const response = await fetch(SITE_CONFIG_URL, { cache: 'no-cache' });
+    if (!response.ok) throw new Error(`config ${response.status}`);
+    applySiteConfig(await response.json());
+  } catch {
+    renderMenuBanners([]);
+    renderCredits([]);
+  }
+}
+
+function applySiteConfig(config) {
+  const product = config?.product || {};
+  const stable = config?.channels?.stable || {};
+  const name = product.name || 'CAPE ANIME';
+  const version = product.versionLabel || (product.version ? `v${product.version}` : 'v0.4.0');
+
+  document.title = name;
+  el.productNameText.textContent = name;
+  el.sheetProductName.textContent = name;
+  el.appVersionText.textContent = version;
+  el.sheetVersionText.textContent = version;
+  if (stable.outputUrl) el.outputLink.href = stable.outputUrl;
+  renderMenuBanners(config?.banners || []);
+  renderCredits(config?.credits || []);
+}
+
+function renderMenuBanners(banners) {
+  el.menuBannerList.innerHTML = '';
+  banners.slice(0, 2).forEach((banner) => {
+    const href = String(banner.href || '').trim();
+    const tag = href ? 'a' : 'div';
+    const item = document.createElement(tag);
+    item.className = `menu-banner${href ? '' : ' disabled'}`;
+    if (href) {
+      item.href = href;
+      item.target = '_blank';
+      item.rel = 'noopener';
+    }
+    if (banner.image) {
+      const image = document.createElement('img');
+      image.src = banner.image;
+      image.alt = '';
+      item.append(image);
+    }
+
+    const label = document.createElement('span');
+    label.textContent = banner.label || 'Banner';
+    const meta = document.createElement('small');
+    meta.textContent = href ? 'Open' : `Design slot ${banner.recommendedSize || '1200x375'}`;
+    item.append(label, meta);
+    el.menuBannerList.append(item);
+  });
+}
+
+function renderCredits(credits) {
+  el.creditsList.innerHTML = '';
+  credits.forEach((credit) => {
+    const href = String(credit.url || '').trim();
+    const item = document.createElement(href ? 'a' : 'span');
+    if (href) {
+      item.href = href;
+      item.target = '_blank';
+      item.rel = 'noopener';
+    }
+    item.innerHTML = `<strong>${escapeHtml(credit.name || '')}</strong> ${escapeHtml(credit.role || '')}`;
+    el.creditsList.append(item);
+  });
 }
 
 function bindEvents() {
