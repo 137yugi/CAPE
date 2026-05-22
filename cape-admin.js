@@ -1,4 +1,4 @@
-const CONFIG_URL = 'cape-site-config.json?v=20260523-demo-refresh';
+const CONFIG_URL = 'cape-site-config.json?v=20260523-workspace';
 
 const el = {
   productMeta: document.getElementById('productMeta'),

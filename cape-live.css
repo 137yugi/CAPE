@@ -267,6 +267,16 @@ button {
   text-align: left;
 }
 
+.scene-button.add-scene-button {
+  flex: 1 0 100%;
+  min-width: 100%;
+  text-align: center;
+}
+
+.scene-button.add-scene-button .scene-name {
+  max-width: none;
+}
+
 .scene-button.active {
   color: #111216;
   background:
@@ -458,6 +468,63 @@ button {
   color: rgba(248, 248, 251, 0.88);
   font-size: 13px;
   letter-spacing: 0;
+}
+
+.scene-manager {
+  display: grid;
+  gap: 8px;
+}
+
+.scene-manager-empty {
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  text-align: center;
+}
+
+.manager-scene-item {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 34px 34px 34px;
+  gap: 6px;
+  align-items: center;
+  border-radius: 12px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.manager-scene-item.active {
+  border-color: rgba(125, 247, 255, 0.42);
+  background: rgba(125, 247, 255, 0.11);
+}
+
+.manager-scene-name {
+  min-width: 0;
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--ink);
+  font-weight: 760;
+}
+
+.sheet .scene-manager button {
+  min-height: 38px;
+  padding: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+
+.sheet .scene-manager button:disabled {
+  opacity: 0.34;
+}
+
+.sheet .scene-manager button.danger {
+  color: rgba(255, 180, 196, 0.94);
 }
 
 .field {

@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <title>CAPE ANIME</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="cape-live.css?v=20260523-demo-refresh" />
+    <link rel="stylesheet" href="cape-live.css?v=20260523-workspace" />
   </head>
   <body>
     <main class="cape-live" id="appShell">
@@ -20,7 +20,7 @@
 
       <header class="top-glass app-ui">
         <img src="cape-assets/cape-wordmark.png" alt="CAPE" class="wordmark" />
-        <div class="version-chip" id="appVersionText">v0.4.0</div>
+        <div class="version-chip" id="appVersionText">v0.4.2</div>
         <div class="live-chip" id="liveStatus">No pack</div>
       </header>
 
@@ -58,7 +58,7 @@
           <div>
             <p>Live Settings</p>
             <h2 id="sheetProductName">CAPE ANIME</h2>
-            <small id="sheetVersionText">v0.4.0</small>
+            <small id="sheetVersionText">v0.4.2</small>
           </div>
           <button type="button" class="icon-button" id="closeSheetBtn">×</button>
         </div>
@@ -73,6 +73,7 @@
               <input id="sceneNameInput" type="text" placeholder="Scene name" />
             </label>
             <button type="button" id="renameSceneBtn">名前を保存</button>
+            <div class="scene-manager" id="sceneManagerList"></div>
           </section>
 
           <section class="settings-section">
@@ -159,8 +160,9 @@
         </div>
 
         <div class="sheet-actions">
-          <h3>Pack</h3>
-          <button type="button" id="sheetImportBtn">CAPEファイルを追加</button>
+          <h3>Workspace</h3>
+          <button type="button" id="sheetImportBtn">CAPE / Workspaceを追加</button>
+          <button type="button" id="downloadWorkspaceBtn" class="ghost">Workspaceを保存</button>
           <button type="button" id="sheetDemoBtn" class="ghost">Demoを追加</button>
         </div>
 
@@ -169,14 +171,14 @@
           <div id="creditsList"></div>
         </div>
 
-        <div class="status-panel" id="statusPanel">MotionPNGTuber互換CAPEファイルを読み込めます。</div>
+        <div class="status-panel" id="statusPanel">CAPE / Workspaceファイルを読み込めます。</div>
       </aside>
 
-      <input id="zipInput" type="file" accept=".cape,application/x-cape" multiple hidden />
+      <input id="zipInput" type="file" accept=".cape,.capeworkspace,application/x-cape,application/x-cape-workspace" multiple hidden />
     </main>
 
-    <script src="cape-motion/audio-capture.js?v=20260523-demo-refresh"></script>
-    <script src="cape-motion/lipsync.js?v=20260523-demo-refresh"></script>
-    <script src="cape-live.js?v=20260523-demo-refresh"></script>
+    <script src="cape-motion/audio-capture.js?v=20260523-workspace"></script>
+    <script src="cape-motion/lipsync.js?v=20260523-workspace"></script>
+    <script src="cape-live.js?v=20260523-workspace"></script>
   </body>
 </html>

@@ -2,7 +2,9 @@
 
 const $ = (id) => document.getElementById(id);
 const CAPE_MAGIC = 'CAPEv001';
+const WORKSPACE_MAGIC = 'CAPEW001';
 const textDecoder = new TextDecoder();
+const textEncoder = new TextEncoder();
 
 const el = {
   appShell: $('appShell'),
@@ -24,6 +26,7 @@ const el = {
   closeSheetBtn: $('closeSheetBtn'),
   sceneNameInput: $('sceneNameInput'),
   renameSceneBtn: $('renameSceneBtn'),
+  sceneManagerList: $('sceneManagerList'),
   uiOpacitySlider: $('uiOpacitySlider'),
   uiOpacityValue: $('uiOpacityValue'),
   resetUiOpacityBtn: $('resetUiOpacityBtn'),
@@ -48,6 +51,7 @@ const el = {
   trackOffsetValue: $('trackOffsetValue'),
   resetMouthBtn: $('resetMouthBtn'),
   sheetImportBtn: $('sheetImportBtn'),
+  downloadWorkspaceBtn: $('downloadWorkspaceBtn'),
   sheetDemoBtn: $('sheetDemoBtn'),
   productNameText: $('productNameText'),
   appVersionText: $('appVersionText'),
@@ -59,7 +63,7 @@ const el = {
   zipInput: $('zipInput')
 };
 
-const SITE_CONFIG_URL = 'cape-site-config.json?v=20260523-demo-refresh';
+const SITE_CONFIG_URL = 'cape-site-config.json?v=20260523-workspace';
 
 const state = {
   scenes: [],
@@ -197,7 +201,7 @@ function renderCredits(credits) {
 
 function bindEvents() {
   el.emptyImportBtn.addEventListener('click', openZipPicker);
-  el.packBtn.addEventListener('click', openZipPicker);
+  el.packBtn.addEventListener('click', openSheet);
   el.sheetImportBtn.addEventListener('click', openZipPicker);
   el.zipInput.addEventListener('change', handleZipInput);
 
@@ -208,6 +212,9 @@ function bindEvents() {
   el.menuBtn.addEventListener('click', openSheet);
   el.closeSheetBtn.addEventListener('click', closeSheet);
   el.renameSceneBtn.addEventListener('click', renameActiveScene);
+  el.sceneManagerList.addEventListener('click', handleSceneManagerClick);
+  el.sceneManagerList.addEventListener('change', handleSceneManagerChange);
+  el.downloadWorkspaceBtn.addEventListener('click', downloadWorkspace);
 
   el.uiOpacitySlider.addEventListener('input', (event) => {
     applyUiOpacity(Number(event.target.value));
@@ -253,16 +260,36 @@ async function handleZipInput(event) {
   if (!files.length) return;
 
   state.loading = true;
-  setStatus('CAPEファイルを読み込み中...');
+  setStatus('CAPE / Workspaceを読み込み中...');
   try {
+    const imports = [];
     for (const file of files) {
-      const imported = await importCapeFile(file);
-      state.scenes.push(...imported);
+      imports.push(await importInputFile(file));
     }
-    if (!state.activeSceneId && state.scenes[0]) {
-      await activateScene(state.scenes[0].id);
+
+    let loadedWorkspace = false;
+    let addedScenes = 0;
+    let nextScenes = state.scenes;
+    let nextActiveSceneId = state.activeSceneId;
+    let nextWorkspaceSettings = null;
+    for (const imported of imports) {
+      if (imported.workspace) {
+        nextScenes = imported.scenes;
+        nextActiveSceneId = imported.activeSceneId || null;
+        nextWorkspaceSettings = imported.settings;
+        loadedWorkspace = true;
+      } else {
+        if (nextScenes === state.scenes) nextScenes = [...state.scenes];
+        nextScenes.push(...imported.scenes);
+        addedScenes += imported.scenes.length;
+      }
     }
-    setStatus(`${files.length}個のCAPEファイルを追加しました。`);
+
+    state.scenes = nextScenes;
+    state.activeSceneId = nextActiveSceneId;
+    if (nextWorkspaceSettings) applyWorkspaceSettings(nextWorkspaceSettings);
+    if (state.scenes[0]) await activateScene(state.activeSceneId || state.scenes[0].id);
+    setStatus(loadedWorkspace ? 'Workspaceを読み込みました。' : `${addedScenes}個のSceneを追加しました。`);
   } catch (error) {
     setStatus(error.message || 'CAPEファイルの読み込みに失敗しました。', 'error');
   } finally {
@@ -271,13 +298,25 @@ async function handleZipInput(event) {
   }
 }
 
-async function importCapeFile(file) {
+async function importInputFile(file) {
   if (/\.zip$/i.test(file.name)) {
     throw new Error('ZIPは読み込めません。');
   }
 
-  const packageData = parseCapePackage(await file.arrayBuffer());
-  const scene = buildSceneFromCapePackage(packageData, file.name);
+  const buffer = await file.arrayBuffer();
+  const magic = buffer.byteLength >= 8 ? textDecoder.decode(new Uint8Array(buffer).slice(0, 8)) : '';
+  if (magic === WORKSPACE_MAGIC || /\.capeworkspace$/i.test(file.name)) {
+    return importWorkspaceBuffer(buffer, file.name);
+  }
+  return {
+    workspace: false,
+    scenes: importCapeBuffer(buffer, file.name)
+  };
+}
+
+function importCapeBuffer(buffer, sourceName) {
+  const packageData = parseCapePackage(buffer);
+  const scene = buildSceneFromCapePackage(packageData, sourceName);
   validateMotionScene(scene.files, scene.name);
   return [scene];
 }
@@ -346,6 +385,7 @@ function buildSceneFromCapePackage(packageData, sourceName) {
     id: `scene_${Date.now()}_${Math.random().toString(16).slice(2)}`,
     name: manifest.name || cleanPackageName(sourceName) || 'Scene',
     source: sourceName,
+    packageBuffer: buffer.slice(0),
     files,
     mouthAdjust: initialMouthAdjust({
       mouthAdjust: sceneMeta.mouthAdjust || manifest.mouthAdjust
@@ -366,6 +406,74 @@ function validateMotionScene(files, name) {
   if (missing.length) {
     throw new Error(`${name}: ${missing.join(', ')} が足りません。`);
   }
+}
+
+function importWorkspaceBuffer(buffer, sourceName) {
+  const workspace = parseWorkspacePackage(buffer);
+  const scenes = workspace.manifest.scenes.map((entry, index) => {
+    const offset = Number(entry.offset);
+    const size = Number(entry.size);
+    if (!Number.isInteger(offset) || !Number.isInteger(size) || offset < 0 || size < 0) {
+      throw new Error('WorkspaceのScene tableが壊れています。');
+    }
+
+    const start = workspace.payloadStart + offset;
+    const end = start + size;
+    if (start < workspace.payloadStart || end > buffer.byteLength) {
+      throw new Error('WorkspaceのScene payloadが壊れています。');
+    }
+
+    const sceneSource = entry.source || `${cleanPackageName(sourceName) || 'scene'}-${index + 1}.cape`;
+    const [scene] = importCapeBuffer(buffer.slice(start, end), sceneSource);
+    scene.name = String(entry.name || scene.name || `Scene ${index + 1}`).trim();
+    scene.mouthAdjust = entry.mouthAdjust
+      ? initialMouthAdjust({ mouthAdjust: entry.mouthAdjust })
+      : scene.mouthAdjust;
+    return scene;
+  });
+
+  const activeIndex = Math.round(clampNumber(workspace.manifest.activeIndex, 0, scenes.length - 1, 0));
+  return {
+    workspace: true,
+    scenes,
+    activeSceneId: scenes[activeIndex]?.id || null,
+    settings: workspace.manifest.settings || {}
+  };
+}
+
+function parseWorkspacePackage(buffer) {
+  if (buffer.byteLength < 12) {
+    throw new Error('Workspaceファイルが壊れています。');
+  }
+
+  const bytes = new Uint8Array(buffer);
+  const magic = textDecoder.decode(bytes.slice(0, 8));
+  if (magic !== WORKSPACE_MAGIC) {
+    throw new Error('CAPE Workspace v1ファイルではありません。');
+  }
+
+  const manifestLength = new DataView(buffer).getUint32(8, true);
+  const manifestStart = 12;
+  const manifestEnd = manifestStart + manifestLength;
+  if (manifestEnd > buffer.byteLength) {
+    throw new Error('Workspace manifestが壊れています。');
+  }
+
+  let manifest = null;
+  try {
+    manifest = JSON.parse(textDecoder.decode(bytes.slice(manifestStart, manifestEnd)));
+  } catch {
+    throw new Error('Workspace manifestを読めません。');
+  }
+
+  if (manifest?.format !== 'cape-workspace' || manifest.version !== 1 || !Array.isArray(manifest.scenes)) {
+    throw new Error('対応していないWorkspace形式です。');
+  }
+
+  return {
+    manifest,
+    payloadStart: manifestEnd
+  };
 }
 
 async function activateScene(sceneId) {
@@ -399,6 +507,99 @@ function renameActiveScene() {
   setStatus('シーン名を保存しました。');
 }
 
+function handleSceneManagerClick(event) {
+  const button = event.target.closest('button[data-action]');
+  if (!button) return;
+  const sceneId = button.dataset.sceneId;
+  const action = button.dataset.action;
+  const index = state.scenes.findIndex((item) => item.id === sceneId);
+  if (index < 0) return;
+
+  if (action === 'select') {
+    activateScene(sceneId);
+    return;
+  }
+
+  if (action === 'up' || action === 'down') {
+    const nextIndex = action === 'up' ? index - 1 : index + 1;
+    if (nextIndex < 0 || nextIndex >= state.scenes.length) return;
+    const [scene] = state.scenes.splice(index, 1);
+    state.scenes.splice(nextIndex, 0, scene);
+    render();
+    setStatus('Sceneの順番を変更しました。');
+    return;
+  }
+
+  if (action === 'remove') {
+    removeScene(sceneId);
+  }
+}
+
+function handleSceneManagerChange(event) {
+  const input = event.target.closest('input[data-scene-id]');
+  if (!input) return;
+  const scene = state.scenes.find((item) => item.id === input.dataset.sceneId);
+  if (!scene) return;
+  const nextName = input.value.trim();
+  if (!nextName) {
+    input.value = scene.name;
+    return;
+  }
+  scene.name = nextName;
+  if (scene.id === state.activeSceneId) {
+    el.sceneNameInput.value = nextName;
+    el.liveStatus.textContent = nextName;
+  }
+  render();
+  setStatus('シーン名を保存しました。');
+}
+
+async function removeScene(sceneId) {
+  const index = state.scenes.findIndex((item) => item.id === sceneId);
+  if (index < 0) return;
+  const wasActive = state.activeSceneId === sceneId;
+  state.scenes.splice(index, 1);
+  if (!state.scenes.length) {
+    state.activeSceneId = null;
+    engine.stop();
+    setStatus('Sceneを削除しました。');
+    render();
+    return;
+  }
+
+  if (wasActive) {
+    const nextScene = state.scenes[Math.min(index, state.scenes.length - 1)];
+    await activateScene(nextScene.id);
+  } else {
+    render();
+  }
+  setStatus('Sceneを削除しました。');
+}
+
+function renderSceneManager() {
+  el.sceneManagerList.innerHTML = '';
+  if (!state.scenes.length) {
+    const empty = document.createElement('div');
+    empty.className = 'scene-manager-empty';
+    empty.textContent = 'Scene未追加';
+    el.sceneManagerList.append(empty);
+    return;
+  }
+
+  state.scenes.forEach((scene, index) => {
+    const item = document.createElement('div');
+    item.className = `manager-scene-item${scene.id === state.activeSceneId ? ' active' : ''}`;
+    item.innerHTML = `
+      <button type="button" data-action="select" data-scene-id="${escapeAttr(scene.id)}">${index + 1}</button>
+      <input class="manager-scene-name" data-scene-id="${escapeAttr(scene.id)}" value="${escapeAttr(scene.name)}" />
+      <button type="button" data-action="up" data-scene-id="${escapeAttr(scene.id)}" ${index === 0 ? 'disabled' : ''}>↑</button>
+      <button type="button" data-action="down" data-scene-id="${escapeAttr(scene.id)}" ${index === state.scenes.length - 1 ? 'disabled' : ''}>↓</button>
+      <button type="button" class="danger" data-action="remove" data-scene-id="${escapeAttr(scene.id)}">×</button>
+    `;
+    el.sceneManagerList.append(item);
+  });
+}
+
 async function addDemoScenes() {
   state.loading = true;
   setStatus('Demoを読み込み中...');
@@ -423,8 +624,7 @@ async function loadDemoPackage(url, fileName) {
   const response = await fetch(url, { cache: 'no-cache' });
   if (!response.ok) throw new Error(`${fileName}: Demo CAPEファイルを読み込めません。`);
   const blob = await response.blob();
-  const file = new File([blob], fileName, { type: 'application/x-cape' });
-  return importCapeFile(file);
+  return importCapeBuffer(await blob.arrayBuffer(), fileName);
 }
 
 function render() {
@@ -434,15 +634,19 @@ function render() {
   const scene = activeScene();
   el.liveStatus.textContent = scene ? scene.name : 'No pack';
   el.sceneNameInput.value = scene?.name || '';
+  el.sceneNameInput.disabled = !scene;
+  el.renameSceneBtn.disabled = !scene;
+  el.downloadWorkspaceBtn.disabled = !state.scenes.length;
 
   el.sceneStrip.innerHTML = '';
   if (!state.scenes.length) {
     const placeholder = document.createElement('button');
     placeholder.type = 'button';
-    placeholder.className = 'scene-button';
+    placeholder.className = 'scene-button add-scene-button';
     placeholder.innerHTML = '<span class="scene-name">Add CAPE</span><span class="scene-meta">Scene</span>';
     placeholder.addEventListener('click', openZipPicker);
     el.sceneStrip.append(placeholder);
+    renderSceneManager();
     return;
   }
 
@@ -457,6 +661,7 @@ function render() {
     button.addEventListener('click', () => activateScene(item.id));
     el.sceneStrip.append(button);
   });
+  renderSceneManager();
 }
 
 function activeScene() {
@@ -484,7 +689,7 @@ function applyUiOpacity(value) {
 }
 
 function applySensitivity(value) {
-  state.sensitivity = Math.max(0, Math.min(100, value));
+  state.sensitivity = clampNumber(value, 0, 100, 58);
   localStorage.setItem('cape.sensitivity', String(state.sensitivity));
   el.sensitivitySlider.value = String(state.sensitivity);
   el.sensitivityValue.textContent = String(state.sensitivity);
@@ -516,6 +721,24 @@ function applyBackground(value) {
   el.appShell.classList.toggle('bg-checker', state.background === 'checker');
 }
 
+function applyWorkspaceSettings(settings = {}) {
+  if (settings.uiOpacity !== undefined) applyUiOpacity(Number(settings.uiOpacity));
+  if (settings.sensitivity !== undefined) applySensitivity(Number(settings.sensitivity));
+  if (settings.audioQuality !== undefined) applyAudioQuality(settings.audioQuality);
+  if (settings.stageFit !== undefined) applyStageFit(settings.stageFit);
+  if (settings.background !== undefined) applyBackground(settings.background);
+}
+
+function workspaceSettings() {
+  return {
+    uiOpacity: state.uiOpacity,
+    sensitivity: state.sensitivity,
+    audioQuality: state.audioQuality,
+    stageFit: state.stageFit,
+    background: state.background
+  };
+}
+
 function applyMouthAdjust(next, options = {}) {
   state.mouth = normalizeMouthAdjust(next);
   if (options.persistToScene !== false) {
@@ -530,6 +753,72 @@ function applyMouthAdjust(next, options = {}) {
 function setStatus(message, status = '') {
   el.statusPanel.textContent = message;
   el.statusPanel.dataset.status = status;
+}
+
+function downloadWorkspace() {
+  if (!state.scenes.length) {
+    setStatus('保存するSceneがありません。', 'error');
+    return;
+  }
+
+  try {
+    const buffer = buildWorkspaceBuffer();
+    const blob = new Blob([buffer], { type: 'application/x-cape-workspace' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${safeFileName(activeScene()?.name || 'cape-workspace')}.capeworkspace`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStatus('Workspaceを保存しました。');
+  } catch (error) {
+    setStatus(error.message || 'Workspaceを保存できません。', 'error');
+  }
+}
+
+function buildWorkspaceBuffer() {
+  const manifest = {
+    format: 'cape-workspace',
+    version: 1,
+    product: 'CAPE ANIME',
+    createdAt: new Date().toISOString(),
+    activeIndex: Math.max(0, state.scenes.findIndex((scene) => scene.id === state.activeSceneId)),
+    settings: workspaceSettings(),
+    scenes: []
+  };
+
+  let offset = 0;
+  const packages = state.scenes.map((scene, index) => {
+    if (!scene.packageBuffer) {
+      throw new Error(`${scene.name || `Scene ${index + 1}`}: 元CAPEデータが見つかりません。`);
+    }
+
+    const bytes = new Uint8Array(scene.packageBuffer);
+    manifest.scenes.push({
+      name: scene.name || `Scene ${index + 1}`,
+      source: scene.source || `${safeFileName(scene.name || `scene-${index + 1}`)}.cape`,
+      mouthAdjust: normalizeMouthAdjust(scene.mouthAdjust || defaultMouthAdjust()),
+      offset,
+      size: bytes.byteLength
+    });
+    offset += bytes.byteLength;
+    return bytes;
+  });
+
+  const manifestBytes = textEncoder.encode(JSON.stringify(manifest));
+  const output = new Uint8Array(12 + manifestBytes.byteLength + offset);
+  output.set(textEncoder.encode(WORKSPACE_MAGIC), 0);
+  new DataView(output.buffer).setUint32(8, manifestBytes.byteLength, true);
+  output.set(manifestBytes, 12);
+
+  let cursor = 12 + manifestBytes.byteLength;
+  packages.forEach((bytes) => {
+    output.set(bytes, cursor);
+    cursor += bytes.byteLength;
+  });
+  return output.buffer;
 }
 
 function defineRelativePath(file, path) {
@@ -552,6 +841,15 @@ function cleanPackageName(fileName) {
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function safeFileName(value) {
+  return String(value || 'cape-workspace')
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'cape-workspace';
 }
 
 function defaultMouthAdjust() {
@@ -649,6 +947,10 @@ function escapeHtml(value) {
     '"': '&quot;',
     "'": '&#39;'
   })[char]);
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;');
 }
 
 boot();
