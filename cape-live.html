@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <title>CAPE ANIME</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="cape-live.css?v=20260523-ui-opacity" />
+    <link rel="stylesheet" href="cape-live.css?v=20260523-workspace-name" />
   </head>
   <body>
     <main class="cape-live" id="appShell">
@@ -20,7 +20,7 @@
 
       <header class="top-glass app-ui">
         <img src="cape-assets/cape-wordmark.png" alt="CAPE" class="wordmark" />
-        <div class="version-chip" id="appVersionText">v0.4.3</div>
+        <div class="version-chip" id="appVersionText">v0.4.4</div>
         <div class="live-chip" id="liveStatus">No pack</div>
       </header>
 
@@ -58,7 +58,7 @@
           <div>
             <p>Live Settings</p>
             <h2 id="sheetProductName">CAPE ANIME</h2>
-            <small id="sheetVersionText">v0.4.3</small>
+            <small id="sheetVersionText">v0.4.4</small>
           </div>
           <button type="button" class="icon-button" id="closeSheetBtn">×</button>
         </div>
@@ -161,8 +161,12 @@
 
         <div class="sheet-actions">
           <h3>Workspace</h3>
+          <label class="field">
+            <span>Workspace名</span>
+            <input id="workspaceNameInput" type="text" placeholder="Workspace name" />
+          </label>
           <button type="button" id="sheetImportBtn">CAPE / Workspaceを追加</button>
-          <button type="button" id="downloadWorkspaceBtn" class="ghost">Workspaceを保存</button>
+          <button type="button" id="downloadWorkspaceBtn" class="ghost">名前をつけて保存</button>
           <button type="button" id="sheetDemoBtn" class="ghost">Demoを追加</button>
         </div>
 
@@ -177,8 +181,8 @@
       <input id="zipInput" type="file" accept=".cape,.capeworkspace,application/x-cape,application/x-cape-workspace" multiple hidden />
     </main>
 
-    <script src="cape-motion/audio-capture.js?v=20260523-ui-opacity"></script>
-    <script src="cape-motion/lipsync.js?v=20260523-ui-opacity"></script>
-    <script src="cape-live.js?v=20260523-ui-opacity"></script>
+    <script src="cape-motion/audio-capture.js?v=20260523-workspace-name"></script>
+    <script src="cape-motion/lipsync.js?v=20260523-workspace-name"></script>
+    <script src="cape-live.js?v=20260523-workspace-name"></script>
   </body>
 </html>

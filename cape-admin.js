@@ -1,4 +1,4 @@
-const CONFIG_URL = 'cape-site-config.json?v=20260523-ui-opacity';
+const CONFIG_URL = 'cape-site-config.json?v=20260523-workspace-name';
 
 const el = {
   productMeta: document.getElementById('productMeta'),

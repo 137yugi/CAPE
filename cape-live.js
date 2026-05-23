@@ -5,6 +5,7 @@ const CAPE_MAGIC = 'CAPEv001';
 const WORKSPACE_MAGIC = 'CAPEW001';
 const UI_OPACITY_STORAGE_KEY = 'cape.uiOpacity.v2';
 const DEFAULT_UI_OPACITY = 100;
+const DEFAULT_WORKSPACE_NAME = 'CAPE Workspace';
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
@@ -52,6 +53,7 @@ const el = {
   trackOffsetSlider: $('trackOffsetSlider'),
   trackOffsetValue: $('trackOffsetValue'),
   resetMouthBtn: $('resetMouthBtn'),
+  workspaceNameInput: $('workspaceNameInput'),
   sheetImportBtn: $('sheetImportBtn'),
   downloadWorkspaceBtn: $('downloadWorkspaceBtn'),
   sheetDemoBtn: $('sheetDemoBtn'),
@@ -65,7 +67,7 @@ const el = {
   zipInput: $('zipInput')
 };
 
-const SITE_CONFIG_URL = 'cape-site-config.json?v=20260523-ui-opacity';
+const SITE_CONFIG_URL = 'cape-site-config.json?v=20260523-workspace-name';
 
 const state = {
   scenes: [],
@@ -77,6 +79,7 @@ const state = {
   audioQuality: localStorage.getItem('cape.audioQuality') || 'hq',
   stageFit: localStorage.getItem('cape.stageFit') || 'contain',
   background: localStorage.getItem('cape.background') || 'dark',
+  workspaceName: DEFAULT_WORKSPACE_NAME,
   mouth: defaultMouthAdjust()
 };
 
@@ -216,6 +219,9 @@ function bindEvents() {
   el.renameSceneBtn.addEventListener('click', renameActiveScene);
   el.sceneManagerList.addEventListener('click', handleSceneManagerClick);
   el.sceneManagerList.addEventListener('change', handleSceneManagerChange);
+  el.workspaceNameInput.addEventListener('input', (event) => {
+    state.workspaceName = normalizeWorkspaceName(event.target.value);
+  });
   el.downloadWorkspaceBtn.addEventListener('click', downloadWorkspace);
 
   el.uiOpacitySlider.addEventListener('input', (event) => {
@@ -278,6 +284,7 @@ async function handleZipInput(event) {
       if (imported.workspace) {
         nextScenes = imported.scenes;
         nextActiveSceneId = imported.activeSceneId || null;
+        state.workspaceName = imported.name;
         nextWorkspaceSettings = imported.settings;
         loadedWorkspace = true;
       } else {
@@ -437,6 +444,7 @@ function importWorkspaceBuffer(buffer, sourceName) {
   const activeIndex = Math.round(clampNumber(workspace.manifest.activeIndex, 0, scenes.length - 1, 0));
   return {
     workspace: true,
+    name: normalizeWorkspaceName(workspace.manifest.name || cleanPackageName(sourceName)),
     scenes,
     activeSceneId: scenes[activeIndex]?.id || null,
     settings: workspace.manifest.settings || {}
@@ -632,6 +640,7 @@ async function loadDemoPackage(url, fileName) {
 function render() {
   el.emptyState.style.display = state.scenes.length ? 'none' : 'block';
   el.sceneCountText.textContent = `${state.scenes.length} scenes`;
+  el.workspaceNameInput.value = state.workspaceName;
 
   const scene = activeScene();
   el.liveStatus.textContent = scene ? scene.name : 'No pack';
@@ -769,7 +778,7 @@ function downloadWorkspace() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${safeFileName(activeScene()?.name || 'cape-workspace')}.capeworkspace`;
+    link.download = `${safeFileName(state.workspaceName)}.capeworkspace`;
     document.body.append(link);
     link.click();
     link.remove();
@@ -784,6 +793,7 @@ function buildWorkspaceBuffer() {
   const manifest = {
     format: 'cape-workspace',
     version: 1,
+    name: state.workspaceName,
     product: 'CAPE ANIME',
     createdAt: new Date().toISOString(),
     activeIndex: Math.max(0, state.scenes.findIndex((scene) => scene.id === state.activeSceneId)),
@@ -840,9 +850,14 @@ function normalizePackagePath(path) {
 
 function cleanPackageName(fileName) {
   return decodeURIComponent(String(fileName || '').replace(/\.cape$/i, ''))
+    .replace(/\.capeworkspace$/i, '')
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function normalizeWorkspaceName(value) {
+  return String(value || '').trim() || DEFAULT_WORKSPACE_NAME;
 }
 
 function safeFileName(value) {
