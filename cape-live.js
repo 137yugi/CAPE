@@ -3,6 +3,8 @@
 const $ = (id) => document.getElementById(id);
 const CAPE_MAGIC = 'CAPEv001';
 const WORKSPACE_MAGIC = 'CAPEW001';
+const UI_OPACITY_STORAGE_KEY = 'cape.uiOpacity.v2';
+const DEFAULT_UI_OPACITY = 100;
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
@@ -63,14 +65,14 @@ const el = {
   zipInput: $('zipInput')
 };
 
-const SITE_CONFIG_URL = 'cape-site-config.json?v=20260523-workspace';
+const SITE_CONFIG_URL = 'cape-site-config.json?v=20260523-ui-opacity';
 
 const state = {
   scenes: [],
   activeSceneId: null,
   micRunning: false,
   loading: false,
-  uiOpacity: Number(localStorage.getItem('cape.uiOpacity') || 86),
+  uiOpacity: storedNumber(UI_OPACITY_STORAGE_KEY, DEFAULT_UI_OPACITY),
   sensitivity: Number(localStorage.getItem('cape.sensitivity') || 58),
   audioQuality: localStorage.getItem('cape.audioQuality') || 'hq',
   stageFit: localStorage.getItem('cape.stageFit') || 'contain',
@@ -219,7 +221,7 @@ function bindEvents() {
   el.uiOpacitySlider.addEventListener('input', (event) => {
     applyUiOpacity(Number(event.target.value));
   });
-  el.resetUiOpacityBtn.addEventListener('click', () => applyUiOpacity(86));
+  el.resetUiOpacityBtn.addEventListener('click', () => applyUiOpacity(DEFAULT_UI_OPACITY));
   el.stageFitSelect.addEventListener('change', (event) => {
     applyStageFit(event.target.value);
   });
@@ -681,8 +683,8 @@ function closeSheet() {
 }
 
 function applyUiOpacity(value) {
-  state.uiOpacity = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 86));
-  localStorage.setItem('cape.uiOpacity', String(state.uiOpacity));
+  state.uiOpacity = clampNumber(value, 0, 100, DEFAULT_UI_OPACITY);
+  localStorage.setItem(UI_OPACITY_STORAGE_KEY, String(state.uiOpacity));
   el.uiOpacitySlider.value = String(state.uiOpacity);
   el.uiOpacityValue.textContent = `${state.uiOpacity}%`;
   document.documentElement.style.setProperty('--ui-alpha', String(state.uiOpacity / 100));
@@ -929,6 +931,11 @@ function clampNumber(value, min, max, fallback) {
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return Math.max(min, Math.min(max, number));
+}
+
+function storedNumber(key, fallback) {
+  const value = localStorage.getItem(key);
+  return value === null ? fallback : clampNumber(value, 0, 100, fallback);
 }
 
 function guessMime(path) {

@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <title>CAPE ANIME</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="cape-live.css?v=20260523-workspace" />
+    <link rel="stylesheet" href="cape-live.css?v=20260523-ui-opacity" />
   </head>
   <body>
     <main class="cape-live" id="appShell">
@@ -20,7 +20,7 @@
 
       <header class="top-glass app-ui">
         <img src="cape-assets/cape-wordmark.png" alt="CAPE" class="wordmark" />
-        <div class="version-chip" id="appVersionText">v0.4.2</div>
+        <div class="version-chip" id="appVersionText">v0.4.3</div>
         <div class="live-chip" id="liveStatus">No pack</div>
       </header>
 
@@ -58,7 +58,7 @@
           <div>
             <p>Live Settings</p>
             <h2 id="sheetProductName">CAPE ANIME</h2>
-            <small id="sheetVersionText">v0.4.2</small>
+            <small id="sheetVersionText">v0.4.3</small>
           </div>
           <button type="button" class="icon-button" id="closeSheetBtn">×</button>
         </div>
@@ -80,8 +80,8 @@
             <h3>Display</h3>
             <label class="field">
               <span>操作UIの不透明度</span>
-              <input id="uiOpacitySlider" type="range" min="0" max="100" value="86" />
-              <strong id="uiOpacityValue">86%</strong>
+              <input id="uiOpacitySlider" type="range" min="0" max="100" value="100" />
+              <strong id="uiOpacityValue">100%</strong>
             </label>
             <button type="button" id="resetUiOpacityBtn" class="ghost">操作UIを表示に戻す</button>
             <label class="field">
@@ -177,8 +177,8 @@
       <input id="zipInput" type="file" accept=".cape,.capeworkspace,application/x-cape,application/x-cape-workspace" multiple hidden />
     </main>
 
-    <script src="cape-motion/audio-capture.js?v=20260523-workspace"></script>
-    <script src="cape-motion/lipsync.js?v=20260523-workspace"></script>
-    <script src="cape-live.js?v=20260523-workspace"></script>
+    <script src="cape-motion/audio-capture.js?v=20260523-ui-opacity"></script>
+    <script src="cape-motion/lipsync.js?v=20260523-ui-opacity"></script>
+    <script src="cape-live.js?v=20260523-ui-opacity"></script>
   </body>
 </html>
